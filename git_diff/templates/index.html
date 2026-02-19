@@ -1157,12 +1157,12 @@ function renderSegs(segs, from, to) {
     } else {
       const {l,oN,nN} = seg;
       const sign = l.type==='add'?'+':l.type==='del'?'-':' ';
-      const content = JSON.stringify(l.content);
-      h += `<div class="dl ${l.type}">
+      // Use data-copy attribute — never put user content inside onclick
+      h += `<div class="dl ${l.type}" data-copy="${EA(l.content)}">
         <div class="ln">${oN}</div>
         <div class="ln">${nN}</div>
         <div class="lc"><span class="sign">${sign}</span>${EH(l.content)}</div>
-        <button class="clb" onclick="copyText(${content})" title="Copy line">⎘</button>
+        <button class="clb" title="Copy line">⎘</button>
       </div>`;
     }
   }
@@ -1236,11 +1236,8 @@ function copyFileChanges(id) {
   const inner = _id(id+'-inner');
   if (!inner) return;
   const lines = [];
-  inner.querySelectorAll('.dl').forEach(row => {
-    const lc = row.querySelector('.lc');
-    if (!lc) return;
-    const sign = lc.querySelector('.sign')?.textContent || '';
-    const text = lc.textContent.replace(sign, '');
+  inner.querySelectorAll('.dl.add[data-copy], .dl.del[data-copy]').forEach(row => {
+    const text = row.dataset.copy || '';
     if (row.classList.contains('add')) lines.push('+' + text);
     else if (row.classList.contains('del')) lines.push('-' + text);
   });
@@ -1320,13 +1317,15 @@ async function showFileView(path) {
     ]);
     const lines = fc.content.split('\n');
     const isLarge = lines.length > 500;
+    // Store file content for copy-all (safe - not in HTML attribute)
+    window._fileCopyContent = fc.content;
     let h = backBtn('showOverview()');
     h += `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;margin-bottom:10px;display:flex;align-items:center;gap:8px">
       ${fileIcon(path)}<span style="font-size:13px;font-weight:500">${E(path)}</span>
       <span style="margin-left:auto;display:flex;gap:8px;align-items:center">
         <span style="font-size:11px;color:var(--text2)">${lines.length} lines</span>
         <button class="btn sm" onclick="showBlame('${ea(path)}')">Blame</button>
-        <button class="btn sm" onclick="copyText(${JSON.stringify(fc.content)})">Copy all</button>
+        <button class="btn sm" onclick="copyText(window._fileCopyContent)">Copy all</button>
       </span>
     </div>
     <div class="ctabs">
@@ -1346,7 +1345,7 @@ async function showFileView(path) {
       h += renderSegs(fileDataMap[id].segs, 0, CHUNK) + sentinel(id);
     } else {
       lines.forEach((l,i) => {
-        h += `<div class="dl ctx"><div class="ln" style="width:50px">${i+1}</div><div class="lc">${EH(l)}</div><button class="clb" onclick="copyText(${JSON.stringify(l)})" title="Copy line">⎘</button></div>`;
+        h += `<div class="dl ctx" data-copy="${EA(l)}"><div class="ln" style="width:50px">${i+1}</div><div class="lc">${EH(l)}</div><button class="clb" title="Copy line">⎘</button></div>`;
       });
     }
     h += `</div></div></div></div>
@@ -1492,6 +1491,8 @@ function backBtn(onclick) { return `<div class="back-btn" onclick="${onclick}"><
 function E(s) { if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function EH(s) { if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function ea(s) { return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+// EA: escape for HTML attribute value (double-quotes) — safe for data-* attributes
+function EA(s) { if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function notify(msg, type='') {
   const el = _id('notif');
@@ -1500,10 +1501,24 @@ function notify(msg, type='') {
 }
 
 async function copyText(text) {
-  try { await navigator.clipboard.writeText(text); }
-  catch(e) { const ta=document.createElement('textarea');ta.value=text;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta); }
+  try { await navigator.clipboard.writeText(String(text ?? '')); }
+  catch(e) { const ta=document.createElement('textarea');ta.value=String(text??'');ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta); }
   notify('📋 Copied!','ok');
 }
+
+// ================================================================
+// DELEGATED EVENT: copy-line buttons (.clb)
+// Reads from data-copy on the parent .dl row — never uses inline onclick
+// ================================================================
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.clb');
+  if (!btn) return;
+  e.stopPropagation();
+  const row = btn.closest('.dl');
+  if (row && row.dataset.copy !== undefined) {
+    copyText(row.dataset.copy);
+  }
+});
 
 const AV_COLORS=['#1e88e5','#43a047','#e53935','#8e24aa','#f4511e','#00897b','#d81b60','#3949ab','#c0ca33','#00acc1'];
 function avatarColor(name) { if(!name)return'#555';let h=0;for(let i=0;i<name.length;i++)h=(h*31+name.charCodeAt(i))&0xffffffff;return AV_COLORS[Math.abs(h)%AV_COLORS.length]; }
