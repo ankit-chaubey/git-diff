@@ -10,13 +10,14 @@ jobs:
   test:
     name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
 
-    # Force UTF-8 stdout on ALL platforms — critical for Windows (CP1252 default)
+    # Force UTF-8 stdout on ALL platforms — critical for Windows
     env:
       PYTHONIOENCODING: utf-8
       PYTHONUTF8: 1
@@ -45,10 +46,71 @@ jobs:
         run: git-diff --help
 
       - name: Functional test - git data collection
-        run: python -c "from git_diff.git_data import get_repo_root, collect_all_data, parse_diff; root = get_repo_root('.'); print('Root:', root); result = parse_diff('diff --git a/f.py b/f.py\nindex a..b 100644\n--- a/f.py\n+++ b/f.py\n@@ -1,2 +1,3 @@\n line1\n-old\n+new1\n+new2\n'); assert result['total_files']==1; assert result['total_additions']==2; assert result['total_deletions']==1; print('parse_diff: OK'); data = collect_all_data(root); assert 'repo' in data; print('Repo:', data['repo']['name']); print('Commits:', len(data['commits'])); print('Files:', len(data['file_tree'])); print('All tests passed!')"
+        run: |
+          python <<'PY'
+          from git_diff.git_data import get_repo_root, collect_all_data, parse_diff
+
+          root = get_repo_root(".")
+          print("Root:", root)
+
+          diff_text = """diff --git a/f.py b/f.py
+          index a..b 100644
+          --- a/f.py
+          +++ b/f.py
+          @@ -1,2 +1,3 @@
+           line1
+          -old
+          +new1
+          +new2
+          """
+
+          result = parse_diff(diff_text)
+          assert result["total_files"] == 1
+          assert result["total_additions"] == 2
+          assert result["total_deletions"] == 1
+          print("parse_diff: OK")
+
+          data = collect_all_data(root)
+          assert "repo" in data
+          print("Repo:", data["repo"]["name"])
+          print("Commits:", len(data["commits"]))
+          print("Files:", len(data["file_tree"]))
+
+          print("All tests passed!")
+          PY
 
       - name: Functional test - server imports
-        run: python -c "from git_diff.server import find_free_port, GitDiffHandler; port = find_free_port(); print('Free port:', port); assert 7433 <= port <= 7500; print('Server imports: OK')"
+        run: |
+          python <<'PY'
+          from git_diff.server import find_free_port, GitDiffHandler
+
+          port = find_free_port()
+          print("Free port:", port)
+          assert 7433 <= port <= 7500
+
+          print("Server imports: OK")
+          PY
 
       - name: Functional test - diff edge cases
-        run: python -c "from git_diff.git_data import parse_diff; r=parse_diff(''); assert r['total_files']==0; r=parse_diff('diff --git a/n.py b/n.py\nnew file mode 100644\nindex 0000000..abc\n--- /dev/null\n+++ b/n.py\n@@ -0,0 +1,2 @@\n+a\n+b\n'); assert r['files'][0]['is_new']==True; assert r['total_additions']==2; print('Edge cases OK')"
+        run: |
+          python <<'PY'
+          from git_diff.git_data import parse_diff
+
+          r = parse_diff("")
+          assert r["total_files"] == 0
+
+          r = parse_diff("""diff --git a/n.py b/n.py
+          new file mode 100644
+          index 0000000..abc
+          --- /dev/null
+          +++ b/n.py
+          @@ -0,0 +1,2 @@
+          +a
+          +b
+          """)
+
+          assert r["files"][0]["is_new"] is True
+          assert r["total_additions"] == 2
+
+          print("Edge cases OK")
+          PY
