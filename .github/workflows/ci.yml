@@ -17,7 +17,6 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
 
-    # Force UTF-8 stdout on ALL platforms — critical for Windows
     env:
       PYTHONIOENCODING: utf-8
       PYTHONUTF8: 1
@@ -30,7 +29,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Upgrade pip (silently)
+      - name: Upgrade pip
         run: python -m pip install --upgrade pip --quiet
 
       - name: Install package (editable)
@@ -46,6 +45,7 @@ jobs:
         run: git-diff --help
 
       - name: Functional test - git data collection
+        shell: bash
         run: |
           python <<'PY'
           from git_diff.git_data import get_repo_root, collect_all_data, parse_diff
@@ -64,10 +64,10 @@ jobs:
           +new2
           """
 
-          result = parse_diff(diff_text)
-          assert result["total_files"] == 1
-          assert result["total_additions"] == 2
-          assert result["total_deletions"] == 1
+          r = parse_diff(diff_text)
+          assert r["total_files"] == 1
+          assert r["total_additions"] == 2
+          assert r["total_deletions"] == 1
           print("parse_diff: OK")
 
           data = collect_all_data(root)
@@ -80,9 +80,10 @@ jobs:
           PY
 
       - name: Functional test - server imports
+        shell: bash
         run: |
           python <<'PY'
-          from git_diff.server import find_free_port, GitDiffHandler
+          from git_diff.server import find_free_port
 
           port = find_free_port()
           print("Free port:", port)
@@ -92,6 +93,7 @@ jobs:
           PY
 
       - name: Functional test - diff edge cases
+        shell: bash
         run: |
           python <<'PY'
           from git_diff.git_data import parse_diff
