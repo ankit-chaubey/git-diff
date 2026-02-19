@@ -253,42 +253,6 @@ git-diff/
 
 ---
 
-## Publishing to PyPI (for maintainers)
-
-This project uses **PyPI Trusted Publisher** (OIDC) — no API token or password required!
-
-### One-time setup
-
-1. **Create the package on PyPI** (first release only):
-   - Go to [pypi.org/manage/account/publishing](https://pypi.org/manage/account/publishing/)
-   - Add a new pending trusted publisher:
-     ```
-     PyPI project name : git-diff
-     Owner             : ankit-chaubey
-     Repository name   : git-diff
-     Workflow filename : publish.yml
-     Environment name  : pypi
-     ```
-
-2. **Create `pypi` environment** in your GitHub repo:
-   - Go to repo → Settings → Environments → New environment → name it `pypi`
-   - Optionally add a required reviewer for extra safety
-
-### Publishing a new release
-
-**Option A — GitHub Release (recommended)**
-1. Go to GitHub repo → Releases → Draft new release
-2. Create a tag like `v0.2.0`
-3. Publish the release
-4. Workflow runs automatically → published to PyPI ✅
-
-**Option B — Manual workflow dispatch**
-1. Go to Actions → "Publish to PyPI" → Run workflow
-2. Enter optional new version (e.g. `0.2.0`) — auto-bumps and commits
-3. Check "Dry run" to test without actually publishing
-
----
-
 ## Changelog
 
 See [CHANGELOG.md](CHANGELOG.md).
@@ -297,7 +261,7 @@ See [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
-MIT © 2024 [Ankit Chaubey](https://github.com/ankit-chaubey)
+MIT © 2024-Persent [Ankit Chaubey](https://github.com/ankit-chaubey)
 
 ---
 
