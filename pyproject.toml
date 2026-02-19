@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "git-diff"
-version = "0.1.0"
+version = "0.1.1"
 description = "Beautiful git viewer in your browser — like GitHub, but local. Diffs, history, blame, compare branches/SHAs, contributors, and more."
 readme = "README.md"
 requires-python = ">=3.8"
