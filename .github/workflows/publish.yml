@@ -52,8 +52,8 @@ jobs:
           echo "Bumping version to $NEW_VERSION"
           sed -i "s/^version = .*/version = \"$NEW_VERSION\"/" pyproject.toml
           sed -i "s/__version__ = .*/__version__ = \"$NEW_VERSION\"/" git_diff/__init__.py
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "vasu-cli"
+          git config user.email "vasu-cli@users.noreply.github.com"
           git add pyproject.toml git_diff/__init__.py
           git commit -m "chore: release v$NEW_VERSION [skip ci]"
           git tag "v$NEW_VERSION"

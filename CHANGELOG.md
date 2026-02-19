@@ -7,9 +7,28 @@ This project uses [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [0.1.0] — 2024-01-01
+## [0.1.2] — 2026-02-19
 
-### 🎉 Initial release
+### Here's everything fixed in v0.1.2:
+ - **📱 Mobile scroll — FIXED**
+  - The root cause: clicking Contributors/History tabs rendered content below the fold and there was no auto-scroll. Now showTab() smoothly scrolls .main to bring the tabs into view on mobile
+  - Added -webkit-overflow-scrolling: touch and overscroll-behavior: contain to main — proper native iOS/Android momentum scrolling
+  - Bottom nav now has dedicated Commits, Files, and People buttons that render content directly into main (no sidebar needed) — fully scrollable list pages with search
+
+ - **📊 Heatmap — FIXED**
+  - Now always renders (even with 0 commits — shows the grid with an empty state)
+  - Added month labels (Jan, Feb, Mar...) across the top
+  - Added day labels (M, W, F) on the left side
+  - Added a Less/More legend with color gradient chips
+  - Shows total commit count in header
+
+## [0.1.1] — 2026-02-19
+
+### Improved UI for mobile
+
+## [0.1.0] — 2026-02-19
+
+### 🎉 Initial release ( was developed in 2024/ published today)
 
 #### Added
 - **GitHub-style diff viewer** with line numbers, `+`/`-` highlights, hunk headers

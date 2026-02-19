@@ -95,7 +95,7 @@ input,select{font-family:inherit}
 .sidebar-body{flex:1;overflow-y:auto;overflow-x:hidden}
 
 /* MAIN */
-.main{flex:1;overflow-y:auto;padding:16px 20px;min-width:0}
+.main{flex:1;overflow-y:auto;padding:16px 20px;min-width:0;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 
 /* ================================================================
    DIFF TOOLBAR
@@ -309,31 +309,88 @@ code{background:var(--bg3);padding:1px 5px;border-radius:3px;font-size:12px}
 .vs-sentinel{height:1px;visibility:hidden}
 
 /* ================================================================
+   FOOTER
+================================================================ */
+.footer{
+  flex-shrink:0;background:var(--bg2);border-top:1px solid var(--border);
+  padding:10px 20px;display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:8px;font-size:11px;color:var(--text3);
+}
+.footer a{color:var(--text2);text-decoration:none;transition:color .12s}
+.footer a:hover{color:var(--link);text-decoration:underline}
+.footer-left{display:flex;align-items:center;gap:6px}
+.footer-right{display:flex;align-items:center;gap:12px}
+.version-badge{
+  background:var(--bg3);border:1px solid var(--border);
+  color:var(--text3);padding:1px 7px;border-radius:10px;
+  font-size:10px;font-weight:700;letter-spacing:.3px;font-family:inherit;
+}
+.footer-sep{color:var(--border);user-select:none}
+
+/* Version in topbar */
+.topbar-version{
+  font-size:10px;color:var(--text3);background:var(--bg3);
+  border:1px solid var(--border);padding:2px 7px;border-radius:10px;
+  font-weight:700;letter-spacing:.3px;white-space:nowrap;
+}
+
+/* Heatmap labels */
+.heatmap-wrap{position:relative}
+.heatmap-months{display:flex;gap:3px;margin-bottom:4px;font-size:9px;color:var(--text3);padding-left:2px}
+.heatmap-months span{width:11px;text-align:center;overflow:visible;white-space:nowrap}
+.heatmap-days{display:flex;flex-direction:column;gap:3px;margin-right:5px;font-size:9px;color:var(--text3);line-height:11px;padding-top:1px}
+.heatmap-outer{display:flex;align-items:flex-start}
+.heatmap-empty{text-align:center;padding:16px;color:var(--text3);font-size:12px}
+
+/* ================================================================
    MOBILE
 ================================================================ */
 @media(max-width:700px){
-  .sidebar{position:absolute;z-index:150;height:calc(100% - 50px);top:50px;left:0;transform:translateX(-100%);transition:transform .25s ease;width:280px !important}
+  .sidebar{position:absolute;z-index:150;height:calc(100% - 50px);top:50px;left:0;transform:translateX(-100%);transition:transform .25s ease;width:85vw !important;max-width:300px}
   .sidebar.mobile-open{transform:translateX(0)}
   .sidebar.collapsed{transform:translateX(-100%)}
-  .sb-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:140;display:none}
+  .sb-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:140;display:none}
   .sb-backdrop.show{display:block}
-  .topbar-pill,.topbar-branch{display:none}
+  .topbar-pill,.topbar-branch,.topbar-version{display:none}
   .topbar{padding:0 10px;gap:7px}
-  .theme-toggle .theme-opt{padding:3px 7px}
-  .main{padding:10px 10px}
+  .theme-toggle .theme-opt{padding:3px 6px;font-size:12px}
+  /* CRITICAL: proper touch scroll on main */
+  .main{
+    padding:10px 10px;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain;
+  }
   .stats-grid{grid-template-columns:1fr 1fr;gap:6px}
+  .stat-card{padding:10px 12px}
   .stat-card .val{font-size:18px}
-  /* On mobile, copy btn only shows on long press - hide by default */
   .clb{display:none}
-  /* Fix: on mobile the file path can wrap so you can read it */
   .diff-file-hdr .fpath{white-space:normal;overflow:visible;text-overflow:unset;font-size:11px;word-break:break-all;line-height:1.4}
   .diff-toolbar{gap:4px}
   /* Mobile nav bar */
-  .mnav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);z-index:200;height:54px}
-  .mn-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:9px;font-weight:700;color:var(--text3);cursor:pointer;text-transform:uppercase;letter-spacing:.3px;border:none;background:none;font-family:inherit;transition:color .1s}
+  .mnav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);z-index:200;height:56px;box-shadow:0 -2px 10px var(--shadow)}
+  .mn-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:9px;font-weight:700;color:var(--text3);cursor:pointer;text-transform:uppercase;letter-spacing:.3px;border:none;background:none;font-family:inherit;transition:color .12s;padding:4px 2px}
   .mn-btn.active{color:var(--add-text)}
-  .body{padding-bottom:54px}
-  .notif{bottom:70px;right:10px;left:10px;text-align:center}
+  .mn-btn svg{transition:transform .12s}
+  .mn-btn.active svg{transform:scale(1.1)}
+  /* body needs bottom padding for nav */
+  .body{padding-bottom:56px}
+  .notif{bottom:72px;right:10px;left:10px;text-align:center}
+  /* Footer compact on mobile */
+  .footer{padding:8px 12px;font-size:10px}
+  .footer-right{gap:8px}
+  /* Heatmap smaller on mobile */
+  .hm-cell{width:9px;height:9px}
+  .heatmap-months span{width:9px}
+  .heatmap-days{font-size:8px;line-height:9px}
+  /* ctabs scroll horizontally on mobile */
+  .ctabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .ctabs::-webkit-scrollbar{display:none}
+  /* Tab panes: min height so content is accessible */
+  .tab-pane.active{min-height:200px}
+  /* Commit items easier to tap */
+  .commit-item{padding:12px}
+  /* Stats grid: no gap issues */
+  .stats-grid{margin-bottom:12px}
 }
 @media(min-width:701px){
   .mnav{display:none}
@@ -353,6 +410,7 @@ code{background:var(--bg3);padding:1px 5px;border-radius:3px;font-size:12px}
     </svg>
     git-diff
   </div>
+  <span class="topbar-version">v0.1.2</span>
   <div class="topbar-pill" id="topbarRepo">Loading…</div>
   <div class="topbar-branch" id="topbarBranch">
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><line x1="6" y1="9" x2="6" y2="15"/><path d="M18 9c0 3.866-2.686 7-6 9"/></svg>
@@ -396,6 +454,30 @@ code{background:var(--bg3);padding:1px 5px;border-radius:3px;font-size:12px}
   <div class="main" id="main">
     <div class="loading"><div class="spinner"></div><div>Loading repository…</div></div>
   </div>
+</div><!-- .body -->
+
+<!-- FOOTER -->
+<div class="footer" id="appFooter">
+  <div class="footer-left">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--add-text)"><circle cx="12" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><line x1="6" y1="9" x2="6" y2="15"/><path d="M18 9c0 3.866-2.686 7-6 9"/></svg>
+    <a href="https://github.com/ankit-chaubey/git-diff" target="_blank" rel="noopener" style="font-weight:700;color:var(--text2)">git-diff</a>
+    <span class="footer-sep">·</span>
+    <span class="version-badge">v0.1.2</span>
+    <span class="footer-sep">·</span>
+    <span>© 2024–Present</span>
+    <span class="footer-sep">·</span>
+    <a href="https://github.com/ankit-chaubey" target="_blank" rel="noopener" style="font-weight:600;color:var(--text2)">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:3px"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+      Ankit Chaubey
+    </a>
+  </div>
+  <div class="footer-right">
+    <a href="https://github.com/ankit-chaubey/git-diff" target="_blank" rel="noopener" title="View source on GitHub">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+      Star on GitHub
+    </a>
+    <span>Made with ❤️ in India</span>
+  </div>
 </div>
 
 <!-- MOBILE NAV BAR -->
@@ -408,17 +490,17 @@ code{background:var(--bg3);padding:1px 5px;border-radius:3px;font-size:12px}
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
     Changes
   </button>
-  <button class="mn-btn" id="mn-commits" onclick="switchNav('commits');openMobileSidebar();setMN('commits')">
+  <button class="mn-btn" id="mn-commits" onclick="showMobileHistory();setMN('commits')">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><line x1="1.05" y1="12" x2="7" y2="12"/><line x1="17.01" y1="12" x2="22.96" y2="12"/></svg>
     Commits
   </button>
-  <button class="mn-btn" id="mn-files" onclick="switchNav('files');openMobileSidebar();setMN('files')">
+  <button class="mn-btn" id="mn-files" onclick="showMobileFiles();setMN('files')">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
     Files
   </button>
-  <button class="mn-btn" id="mn-compare" onclick="showCompare();setMN('compare')">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-    Compare
+  <button class="mn-btn" id="mn-contrib" onclick="showMobileContribs();setMN('contrib')">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    People
   </button>
 </div>
 
@@ -537,6 +619,55 @@ function closeMobileSidebar() {
 function setMN(id) {
   document.querySelectorAll('.mn-btn').forEach(b => b.classList.remove('active'));
   _id('mn-' + id)?.classList.add('active');
+}
+
+// ================================================================
+// MOBILE DIRECT VIEWS (render content straight into main, no sidebar needed)
+// ================================================================
+function showMobileHistory() {
+  if (!DATA) return;
+  let h = backBtn('showOverview()');
+  h += `<div class="section-title">Commit History <span class="cnt">${DATA.commits.length}</span></div>`;
+  h += `<div class="search-bar" style="margin:-4px 0 12px;padding:0">
+    <input class="search-input" placeholder="Search commits…" oninput="filterMobileList(this,'mob-commit-list')">
+  </div>`;
+  h += `<div id="mob-commit-list">` + DATA.commits.map(c => commitRow(c)).join('') + `</div>`;
+  setMain(h);
+  _id('main').scrollTop = 0;
+}
+
+function showMobileFiles() {
+  if (!DATA) return;
+  let h = backBtn('showOverview()');
+  h += `<div class="section-title">Files <span class="cnt">${DATA.file_tree.length}</span></div>`;
+  h += `<div class="search-bar" style="margin:-4px 0 12px;padding:0">
+    <input class="search-input" placeholder="Filter files…" oninput="filterMobileList(this,'mob-file-list')">
+  </div>`;
+  h += `<div id="mob-file-list">` + DATA.file_tree.slice(0, 1000).map(f =>
+    `<div class="tree-row" onclick="showFileView('${ea(f.path)}')" title="${E(f.path)}">
+      ${fileIcon(f.path)}
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis">${E(f.path)}</span>
+    </div>`).join('') + `</div>`;
+  if (DATA.file_tree.length > 1000) h += `<div style="padding:8px 0;font-size:11px;color:var(--text3)">Showing 1000 of ${DATA.file_tree.length} files</div>`;
+  setMain(h);
+  _id('main').scrollTop = 0;
+}
+
+function showMobileContribs() {
+  if (!DATA) return;
+  const r = DATA.repo;
+  let h = backBtn('showOverview()');
+  h += `<div class="section-title">Contributors <span class="cnt">${r.contributors.length}</span></div>`;
+  h += buildContributorsPane(r.contributors).replace('<div class="tab-pane" id="tab-contributors">','').replace('</div>','');
+  setMain(h);
+  _id('main').scrollTop = 0;
+}
+
+function filterMobileList(inp, listId) {
+  const q = inp.value.toLowerCase();
+  _id(listId)?.children && Array.from(_id(listId).children).forEach(el => {
+    el.style.display = !q || el.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
 }
 
 // ── Changes nav ──────────────────────────────────────────────────
@@ -684,17 +815,32 @@ function showOverview() {
     ${statCard(r.branch_count,'Branches','var(--yellow)',"showTab('branches')")}
     ${statCard(r.tags.length,'Tags','var(--accent3)',"showTab('branches')")}
     ${statCard(r.contributors.length,'Contributors','var(--orange)',"showTab('contributors')")}
-    ${statCard(DATA.file_tree.length.toLocaleString(),'Files','var(--text2)',"switchNav('files')")}
+    ${statCard(DATA.file_tree.length.toLocaleString(),'Files','var(--text2)',"showMobileFiles()")}
     ${statCard(`+${s.total_additions}`,'Staged +','var(--add-text)',"showTab('changes')")}
     ${statCard(`-${u.total_deletions}`,'Unstaged −','var(--del-text)',"showTab('changes')")}
   </div>`;
   html += buildHeatmap();
-  html += `<div class="ctabs">
-    <div class="ctab active" onclick="showTab('changes')" id="ct-changes">Changes <span class="badge">${st.length}</span></div>
-    <div class="ctab" onclick="showTab('history')" id="ct-history">History <span class="badge">${DATA.commits.length}</span></div>
-    <div class="ctab" onclick="showTab('contributors')" id="ct-contributors">Contributors <span class="badge">${r.contributors.length}</span></div>
-    <div class="ctab" onclick="showTab('branches')" id="ct-branches">Branches <span class="badge">${r.branches.length}</span></div>
-    <div class="ctab" onclick="showTab('langs')" id="ct-langs">Languages</div>
+  html += `<div class="ctabs" id="mainCtabs">
+    <div class="ctab active" onclick="showTab('changes')" id="ct-changes">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      Changes <span class="badge">${st.length}</span>
+    </div>
+    <div class="ctab" onclick="showTab('history')" id="ct-history">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      History <span class="badge">${DATA.commits.length}</span>
+    </div>
+    <div class="ctab" onclick="showTab('contributors')" id="ct-contributors">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      Contributors <span class="badge">${r.contributors.length}</span>
+    </div>
+    <div class="ctab" onclick="showTab('branches')" id="ct-branches">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><line x1="6" y1="9" x2="6" y2="15"/></svg>
+      Branches <span class="badge">${r.branches.length}</span>
+    </div>
+    <div class="ctab" onclick="showTab('langs')" id="ct-langs">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      Languages
+    </div>
   </div>`;
   html += buildChangesPane(s, u, st);
   html += buildHistoryPane();
@@ -702,12 +848,25 @@ function showOverview() {
   html += buildBranchesPane(r);
   html += buildLangsPane();
   setMain(html);
+  _id('main').scrollTop = 0;
 }
 function showTab(name) {
   document.querySelectorAll('.tab-pane').forEach(e=>e.classList.remove('active'));
   document.querySelectorAll('.ctab').forEach(e=>e.classList.remove('active'));
   _id('tab-'+name)?.classList.add('active');
   _id('ct-'+name)?.classList.add('active');
+  // On mobile: scroll main so the tab content is visible
+  if (window.innerWidth <= 700) {
+    const ctabsEl = document.querySelector('.ctabs');
+    const mainEl = _id('main');
+    if (ctabsEl && mainEl) {
+      // Small delay to let DOM update
+      setTimeout(() => {
+        const ctabsTop = ctabsEl.offsetTop;
+        mainEl.scrollTo({top: ctabsTop - 8, behavior: 'smooth'});
+      }, 30);
+    }
+  }
 }
 function statCard(val, lbl, color, onclick) {
   return `<div class="stat-card" ${onclick?`onclick="${onclick}"`:''}>
@@ -717,14 +876,80 @@ function statCard(val, lbl, color, onclick) {
 }
 function buildHeatmap() {
   const stats = DATA.commit_stats || {};
-  if (!Object.keys(stats).length) return '';
   const today = new Date(); today.setHours(0,0,0,0);
+
+  // Build 13 weeks × 7 days grid (most recent on right)
   const cells = [];
-  for (let w=12;w>=0;w--){const col=[];for(let d=6;d>=0;d--){const dt=new Date(today);dt.setDate(today.getDate()-w*7-d);const key=dt.toISOString().slice(0,10);col.push({date:key,count:stats[key]||0});}cells.push(col);}
-  const max = Math.max(...Object.values(stats),1);
-  let h = `<div class="activity-chart"><div class="activity-title">Commit activity — last 90 days</div><div class="heatmap">`;
-  cells.forEach(col=>{h+=`<div class="hm-col">`;col.forEach(cell=>{const lvl=cell.count===0?0:cell.count<max*.25?1:cell.count<max*.5?2:cell.count<max*.75?3:4;h+=`<div class="hm-cell hm-${lvl}" title="${cell.date}: ${cell.count} commits"></div>`;});h+=`</div>`;});
-  return h+`</div></div>`;
+  const monthMarkers = new Map(); // column index → month label
+
+  for (let w = 12; w >= 0; w--) {
+    const col = [];
+    for (let d = 6; d >= 0; d--) {
+      const dt = new Date(today);
+      dt.setDate(today.getDate() - w * 7 - d);
+      const key = dt.toISOString().slice(0, 10);
+      col.push({date: key, count: stats[key] || 0, day: dt.getDay(), month: dt.getMonth(), dt});
+    }
+    // Mark month start for label
+    const colIdx = 12 - w;
+    const firstDay = col[0].dt;
+    if (firstDay.getDate() <= 7) {
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      monthMarkers.set(colIdx, months[firstDay.getMonth()]);
+    }
+    cells.push(col);
+  }
+
+  const max = Object.keys(stats).length ? Math.max(...Object.values(stats), 1) : 1;
+  const totalCommits = Object.values(stats).reduce((a,b)=>a+b,0);
+
+  // Build month label row
+  let monthRow = `<div class="heatmap-months">`;
+  for (let i = 0; i < 13; i++) {
+    monthRow += `<span style="width:11px">${monthMarkers.get(i) || ''}</span>`;
+  }
+  monthRow += `</div>`;
+
+  // Day labels
+  const dayLabels = ['','M','','W','','F',''];
+
+  let h = `<div class="activity-chart">
+    <div class="activity-title" style="display:flex;align-items:center;justify-content:space-between">
+      <span>Commit activity — last 90 days</span>
+      <span style="font-weight:400;color:var(--text3)">${totalCommits} commit${totalCommits!==1?'s':''}</span>
+    </div>
+    <div class="heatmap-wrap">
+      ${monthRow}
+      <div class="heatmap-outer">
+        <div class="heatmap-days">
+          ${dayLabels.map(l=>`<span style="height:11px;line-height:11px">${l}</span>`).join('')}
+        </div>
+        <div class="heatmap">`;
+
+  cells.forEach(col => {
+    h += `<div class="hm-col">`;
+    col.forEach(cell => {
+      const lvl = cell.count === 0 ? 0 : cell.count < max*.25 ? 1 : cell.count < max*.5 ? 2 : cell.count < max*.75 ? 3 : 4;
+      h += `<div class="hm-cell hm-${lvl}" title="${cell.date}: ${cell.count} commit${cell.count!==1?'s':''}"></div>`;
+    });
+    h += `</div>`;
+  });
+
+  h += `</div></div>`;
+
+  // Legend
+  h += `<div style="display:flex;align-items:center;gap:5px;margin-top:8px;font-size:10px;color:var(--text3);justify-content:flex-end">
+    <span>Less</span>
+    <div class="hm-cell hm-0" style="width:11px;height:11px"></div>
+    <div class="hm-cell hm-1" style="width:11px;height:11px"></div>
+    <div class="hm-cell hm-2" style="width:11px;height:11px"></div>
+    <div class="hm-cell hm-3" style="width:11px;height:11px"></div>
+    <div class="hm-cell hm-4" style="width:11px;height:11px"></div>
+    <span>More</span>
+  </div>`;
+
+  h += `</div></div>`;
+  return h;
 }
 function buildChangesPane(s, u, st) {
   let h = `<div class="tab-pane active" id="tab-changes">`;
