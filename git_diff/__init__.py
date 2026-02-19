@@ -1,4 +1,4 @@
-"""git-diff — Beautiful git viewer in your browser. Like GitHub, but local."""
+"""git-diff -- Beautiful git viewer in your browser. Like GitHub, but local."""
 
 __version__ = "0.1.0"
 __author__ = "Ankit Chaubey"

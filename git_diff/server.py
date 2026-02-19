@@ -1,6 +1,6 @@
 """
-server.py — Lightweight HTTP server and REST API for git-diff.
-No external dependencies — pure Python stdlib only.
+server.py -- Lightweight HTTP server and REST API for git-diff.
+No external dependencies -- pure Python stdlib only.
 """
 import json
 import os
@@ -90,18 +90,18 @@ class GitDiffHandler(BaseHTTPRequestHandler):
     def _route(self, path, p, pi):
         root = self.repo_root
 
-        # ── Serve the SPA ──────────────────────────────────────────────
+        # -- Serve the SPA ----------------------------------------------
         if path in ("/", "/index.html"):
             html = TEMPLATE_PATH.read_text(encoding="utf-8")
             self.send_html(html)
             return
 
-        # ── Initial bundle ─────────────────────────────────────────────
+        # -- Initial bundle ---------------------------------------------
         if path == "/api/data":
             self.send_json(self.initial_data)
             return
 
-        # ── Commit detail + diff ───────────────────────────────────────
+        # -- Commit detail + diff ---------------------------------------
         if path == "/api/commit":
             h = p("hash")
             if not h:
@@ -113,7 +113,7 @@ class GitDiffHandler(BaseHTTPRequestHandler):
             self.send_json({"diff": diff, "detail": detail})
             return
 
-        # ── Paginated commit history ───────────────────────────────────
+        # -- Paginated commit history -----------------------------------
         if path == "/api/commits":
             branch = p("branch", "HEAD")
             limit = pi("limit", 100)
@@ -125,7 +125,7 @@ class GitDiffHandler(BaseHTTPRequestHandler):
             self.send_json({"commits": commits[offset:offset + limit], "total": len(commits)})
             return
 
-        # ── Range diff: branch-to-branch or SHA-to-SHA ────────────────
+        # -- Range diff: branch-to-branch or SHA-to-SHA ----------------
         if path == "/api/range-diff":
             base = p("base")
             compare = p("compare")
@@ -150,26 +150,26 @@ class GitDiffHandler(BaseHTTPRequestHandler):
             self.send_json({"diff": diff, "commits": range_commits, "base": base, "compare": compare})
             return
 
-        # ── Staged diff ───────────────────────────────────────────────
+        # -- Staged diff -----------------------------------------------
         if path == "/api/staged":
             ctx = pi("context", 3)
             self.send_json(get_staged_diff(root, context=ctx))
             return
 
-        # ── Unstaged diff ─────────────────────────────────────────────
+        # -- Unstaged diff ---------------------------------------------
         if path == "/api/unstaged":
             ctx = pi("context", 3)
             self.send_json(get_unstaged_diff(root, context=ctx))
             return
 
-        # ── Stash diff ────────────────────────────────────────────────
+        # -- Stash diff ------------------------------------------------
         if path == "/api/stash":
             ref = p("ref", "stash@{0}")
             ctx = pi("context", 3)
             self.send_json({"diff": get_stash_diff(root, ref, context=ctx)})
             return
 
-        # ── File content at ref ───────────────────────────────────────
+        # -- File content at ref ---------------------------------------
         if path == "/api/file":
             fp = p("path")
             ref = p("ref", "HEAD")
@@ -179,7 +179,7 @@ class GitDiffHandler(BaseHTTPRequestHandler):
             self.send_json(get_file_content(root, fp, ref))
             return
 
-        # ── File commit history ───────────────────────────────────────
+        # -- File commit history ---------------------------------------
         if path == "/api/file-log":
             fp = p("path")
             limit = pi("limit", 50)
@@ -189,7 +189,7 @@ class GitDiffHandler(BaseHTTPRequestHandler):
             self.send_json({"commits": get_file_log(root, fp, limit=limit)})
             return
 
-        # ── File blame ────────────────────────────────────────────────
+        # -- File blame ------------------------------------------------
         if path == "/api/blame":
             fp = p("path")
             ref = p("ref", "HEAD")
@@ -199,25 +199,25 @@ class GitDiffHandler(BaseHTTPRequestHandler):
             self.send_json({"blame": get_file_blame(root, fp, ref)})
             return
 
-        # ── Commit activity chart ─────────────────────────────────────
+        # -- Commit activity chart -------------------------------------
         if path == "/api/activity":
             days = pi("days", 90)
             self.send_json({"data": get_commit_stats_by_day(root, days=days)})
             return
 
-        # ── Language stats ────────────────────────────────────────────
+        # -- Language stats --------------------------------------------
         if path == "/api/langs":
             self.send_json({"data": get_language_stats(root)})
             return
 
-        # ── Full refresh ──────────────────────────────────────────────
+        # -- Full refresh ----------------------------------------------
         if path == "/api/refresh":
             data = collect_all_data(root)
             GitDiffHandler.initial_data = data
             self.send_json({"status": "ok", "timestamp": int(time.time())})
             return
 
-        # ── Raw git command (safe read-only subset) ───────────────────
+        # -- Raw git command (safe read-only subset) -------------------
         if path == "/api/git":
             cmd = p("cmd")
             SAFE = {"log", "show", "diff", "blame", "ls-tree", "ls-files",
@@ -258,8 +258,8 @@ def start_server(repo_root: str, data: dict, port: int = None, no_browser: bool 
     server = HTTPServer((host, port), GitDiffHandler)
     url = f"http://{host}:{port}"
 
-    print(f"\n  🌐  Server  →  {url}")
-    print(f"  📁  Repo    →  {repo_root}")
+    print(f"\n  Server  ->  {url}")
+    print(f"  Repo    ->  {repo_root}")
     print(f"\n  Press Ctrl+C to stop\n")
 
     if not no_browser:
@@ -271,6 +271,6 @@ def start_server(repo_root: str, data: dict, port: int = None, no_browser: bool 
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print("\n  👋  git-diff stopped. Have a good one!\n")
+        print("\n  git-diff stopped. Have a good one!\n")
     finally:
         server.server_close()

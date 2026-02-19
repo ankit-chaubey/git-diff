@@ -1,5 +1,5 @@
 """
-cli.py — Command-line interface for git-diff.
+cli.py - Command-line interface for git-diff.
 """
 import argparse
 import os
@@ -18,7 +18,7 @@ BANNER = r"""
 def main():
     parser = argparse.ArgumentParser(
         prog="git-diff",
-        description="Beautiful git diff viewer in your browser — like GitHub, but local.",
+        description="Beautiful git diff viewer in your browser -- like GitHub, but local.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -61,18 +61,18 @@ Examples:
         repo_path = args.path or os.getcwd()
         repo_root = get_repo_root(repo_path)
     except RuntimeError as e:
-        print(f"  ❌  Error: {e}\n", file=sys.stderr)
+        print(f"  ERROR: {e}\n", file=sys.stderr)
         sys.exit(1)
 
     repo_name = os.path.basename(repo_root)
-    print(f"  📂  Repository: {repo_name}  ({repo_root})\n")
+    print(f"  Repo: {repo_name}  ({repo_root})\n")
 
     try:
-        print("  🔄  Collecting repository data...")
+        print("  Collecting repository data...")
         data = collect_all_data(repo_root)
-        print(f"\n  ✅  Ready! {data['repo']['total_commits']} commits · {len(data['file_tree'])} files · {len(data['repo']['contributors'])} contributors\n")
+        print(f"\n  Ready! {data['repo']['total_commits']} commits, {len(data['file_tree'])} files, {len(data['repo']['contributors'])} contributors\n")
     except Exception as e:
-        print(f"  ❌  Failed to collect git data: {e}\n", file=sys.stderr)
+        print(f"  FAILED: Could not collect git data: {e}\n", file=sys.stderr)
         sys.exit(1)
 
     start_server(repo_root, data, port=args.port, no_browser=args.no_browser, host=args.host)

@@ -1,5 +1,5 @@
 """
-git_data.py — Comprehensive git repository data collection for git-diff.
+git_data.py -- Comprehensive git repository data collection for git-diff.
 Collects everything: commits, diffs, branches, tags, stashes, stats, blame, log graphs.
 """
 import subprocess
@@ -717,34 +717,34 @@ def get_all_refs(repo_root):
 
 def collect_all_data(repo_root):
     """Collect all repository data for initial page load."""
-    print("  📦 Collecting repository metadata...")
+    print("  [1/10] Collecting repository metadata...")
     repo_info = get_repo_info(repo_root)
 
-    print("  📋 Collecting commit history (up to 500)...")
+    print("  [2/10] Collecting commit history (up to 500)...")
     commits = get_commit_history(repo_root, limit=500)
 
-    print("  🔍 Collecting working tree status...")
+    print("  [3/10] Collecting working tree status...")
     status = get_status(repo_root)
 
-    print("  📝 Collecting staged diff...")
+    print("  [4/10] Collecting staged diff...")
     staged_diff = get_staged_diff(repo_root)
 
-    print("  ✏️  Collecting unstaged diff...")
+    print("  [5/10] Collecting unstaged diff...")
     unstaged_diff = get_unstaged_diff(repo_root)
 
-    print("  🌿 Collecting file tree...")
+    print("  [6/10] Collecting file tree...")
     file_tree = get_file_tree(repo_root)
 
-    print("  📦 Collecting stashes...")
+    print("  [7/10] Collecting stashes...")
     stashes = get_stashes(repo_root)
 
-    print("  📊 Collecting commit stats (90 days)...")
+    print("  [8/10] Collecting commit stats (90 days)...")
     commit_stats = get_commit_stats_by_day(repo_root, days=90)
 
-    print("  🔤 Collecting language stats...")
+    print("  [9/10] Collecting language stats...")
     lang_stats = get_language_stats(repo_root)
 
-    print("  🔖 Collecting all refs...")
+    print("  [10/10] Collecting all refs...")
     all_refs = get_all_refs(repo_root)
 
     return {
