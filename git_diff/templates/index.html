@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>git-diff</title>
+<style>
+/* ====================================================================
+   THEMES
+   ==================================================================== */
+:root, [data-theme="dark"] {
+  --bg:        #0d1117;
+  --bg2:       #161b22;
+  --bg3:       #21262d;
+  --bg4:       #30363d;
+  --bg5:       #3d444d;
+  --border:    #30363d;
+  --border2:   #21262d;
+  --text:      #e6edf3;
+  --text2:     #8b949e;
+  --text3:     #6e7681;
+  --link:      #58a6ff;
+  --add-bg:    #0d2419;
+  --add-hl:    #1a4731;
+  --add-text:  #3fb950;
+  --del-bg:    #2d0f0f;
+  --del-hl:    #6e1a1a;
+  --del-text:  #f85149;
+  --hunk-bg:   #1c2128;
+  --accent:    #238636;
+  --accent2:   #1f6feb;
+  --accent3:   #8957e5;
+  --yellow:    #d29922;
+  --orange:    #db6d28;
+  --shadow:    rgba(0,0,0,.4);
+  --scrollbar: #30363d;
+}
+[data-theme="light"] {
+  --bg:        #ffffff;
+  --bg2:       #f6f8fa;
+  --bg3:       #eaeef2;
+  --bg4:       #d0d7de;
+  --bg5:       #afb8c1;
+  --border:    #d0d7de;
+  --border2:   #eaeef2;
+  --text:      #1f2328;
+  --text2:     #636c76;
+  --text3:     #8c959f;
+  --link:      #0969da;
+  --add-bg:    #e6ffec;
+  --add-hl:    #abf2bc;
+  --add-text:  #1a7f37;
+  --del-bg:    #ffebe9;
+  --del-hl:    #ffc1ba;
+  --del-text:  #cf222e;
+  --hunk-bg:   #ddf4ff;
+  --accent:    #1a7f37;
+  --accent2:   #0969da;
+  --accent3:   #6639ba;
+  --yellow:    #9a6700;
+  --orange:    #953800;
+  --shadow:    rgba(0,0,0,.12);
+  --scrollbar: #d0d7de;
+}
+[data-theme="amoled"] {
+  --bg:        #000000;
+  --bg2:       #080808;
+  --bg3:       #111111;
+  --bg4:       #1a1a1a;
+  --bg5:       #222222;
+  --border:    #1f1f1f;
+  --border2:   #111111;
+  --text:      #ffffff;
+  --text2:     #9e9e9e;
+  --text3:     #616161;
+  --link:      #64b5f6;
+  --add-bg:    #001a00;
+  --add-hl:    #003300;
+  --add-text:  #66bb6a;
+  --del-bg:    #1a0000;
+  --del-hl:    #330000;
+  --del-text:  #ef5350;
+  --hunk-bg:   #000a11;
+  --accent:    #2e7d32;
+  --accent2:   #1565c0;
+  --accent3:   #6a1b9a;
+  --yellow:    #f9a825;
+  --orange:    #e65100;
+  --shadow:    rgba(0,0,0,.8);
+  --scrollbar: #1a1a1a;
+}
+
+/* ====================================================================
+   RESET & BASE
+   ==================================================================== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;line-height:1.5}
+a{color:var(--link);text-decoration:none}
+a:hover{text-decoration:underline}
+button{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--scrollbar);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+::selection{background:rgba(31,111,235,.35)}
+
+/* ====================================================================
+   LAYOUT SHELL
+   ==================================================================== */
+.app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+
+/* ── Top bar ── */
+.topbar{
+  background:var(--bg2);
+  border-bottom:1px solid var(--border);
+  padding:0 18px;
+  height:52px;
+  display:flex;align-items:center;gap:14px;
+  flex-shrink:0;z-index:200;
+  position:relative;
+}
+.brand{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;color:var(--text);white-space:nowrap;user-select:none;cursor:pointer}
+.brand svg{color:var(--add-text)}
+.brand span{font-weight:800;letter-spacing:-.3px}
+.topbar-pill{
+  background:var(--bg3);border:1px solid var(--border);
+  color:var(--text2);padding:3px 10px;border-radius:20px;font-size:12px;
+  max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.topbar-branch{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--link);font-family:monospace}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+
+/* ── Buttons ── */
+.btn{
+  display:inline-flex;align-items:center;gap:5px;
+  background:var(--bg3);border:1px solid var(--border);
+  color:var(--text);padding:5px 11px;border-radius:6px;
+  font-size:12px;font-weight:500;transition:all .12s;white-space:nowrap;
+}
+.btn:hover{background:var(--bg4);border-color:var(--text3);color:var(--text)}
+.btn.primary{background:var(--accent);border-color:#2ea043;color:#fff}
+.btn.primary:hover{filter:brightness(1.1)}
+.btn.danger{background:var(--del-bg);border-color:var(--del-text);color:var(--del-text)}
+.btn.sm{padding:3px 8px;font-size:11px}
+.btn.icon{padding:5px 7px}
+.btn svg{flex-shrink:0}
+
+/* ── Theme switcher ── */
+.theme-toggle{display:flex;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:2px;gap:2px}
+.theme-opt{padding:3px 9px;border-radius:16px;font-size:11px;font-weight:600;cursor:pointer;color:var(--text3);transition:all .15s}
+.theme-opt.active{background:var(--bg);color:var(--text);box-shadow:0 1px 3px var(--shadow)}
+
+/* ── Body ── */
+.body{display:flex;flex:1;overflow:hidden;min-height:0}
+
+/* ── Sidebar ── */
+.sidebar{
+  width:270px;flex-shrink:0;
+  background:var(--bg2);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+  transition:width .2s ease;
+}
+.sidebar.collapsed{width:0;border:none}
+.snav{display:flex;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.snav-tab{
+  flex:1;padding:10px 6px;text-align:center;cursor:pointer;
+  font-size:11px;font-weight:600;color:var(--text2);
+  border-bottom:2px solid transparent;transition:all .12s;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.snav-tab:hover{color:var(--text);background:var(--bg3)}
+.snav-tab.active{color:var(--text);border-bottom-color:var(--accent2)}
+.sidebar-body{flex:1;overflow-y:auto;overflow-x:hidden}
+
+/* ── Main content ── */
+.main{flex:1;overflow-y:auto;padding:20px 24px;min-width:0}
+
+/* ====================================================================
+   SEARCH / FILTER
+   ==================================================================== */
+.search-bar{padding:8px 12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.search-input{
+  width:100%;background:var(--bg3);border:1px solid var(--border);
+  color:var(--text);padding:5px 10px;border-radius:6px;font-size:12px;
+  transition:border-color .12s;
+}
+.search-input:focus{outline:none;border-color:var(--accent2)}
+
+/* ====================================================================
+   STATS CARDS
+   ==================================================================== */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;margin-bottom:18px}
+.stat-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:8px;
+  padding:14px 16px;cursor:pointer;transition:border-color .12s,transform .12s;
+}
+.stat-card:hover{border-color:var(--text3);transform:translateY(-1px)}
+.stat-card .lbl{font-size:11px;color:var(--text2);margin-bottom:3px;text-transform:uppercase;letter-spacing:.4px;font-weight:600}
+.stat-card .val{font-size:24px;font-weight:800;line-height:1;margin-bottom:2px}
+.stat-card .sub{font-size:11px;color:var(--text3)}
+
+/* ====================================================================
+   CONTENT TABS
+   ==================================================================== */
+.ctabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:18px;gap:0;overflow-x:auto}
+.ctab{
+  padding:9px 16px;cursor:pointer;font-size:13px;color:var(--text2);
+  border-bottom:2px solid transparent;transition:all .12s;
+  display:flex;align-items:center;gap:6px;white-space:nowrap;
+}
+.ctab:hover{color:var(--text)}
+.ctab.active{color:var(--text);border-bottom-color:var(--accent2)}
+.ctab .badge{font-size:11px;background:var(--bg3);padding:1px 7px;border-radius:12px;color:var(--text2)}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+
+/* ====================================================================
+   DIFF VIEWER
+   ==================================================================== */
+.diff-file{
+  background:var(--bg2);border:1px solid var(--border);border-radius:8px;
+  margin-bottom:12px;overflow:hidden;
+}
+.diff-file-hdr{
+  display:flex;align-items:center;gap:8px;
+  padding:9px 14px;background:var(--bg3);
+  border-bottom:1px solid var(--border);cursor:pointer;
+  transition:background .1s;
+}
+.diff-file-hdr:hover{background:var(--bg4)}
+.diff-file-hdr .fpath{
+  flex:1;font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+  font-size:12px;color:var(--text);font-weight:500;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.diff-file-hdr .fstats{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.pill{padding:2px 7px;border-radius:12px;font-size:11px;font-weight:600}
+.pill.add{background:rgba(63,185,80,.15);color:var(--add-text)}
+.pill.del{background:rgba(248,81,73,.15);color:var(--del-text)}
+.pill.na{background:rgba(139,148,158,.12);color:var(--text3)}
+.fstatus{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px}
+.fstatus.A{background:rgba(63,185,80,.2);color:var(--add-text)}
+.fstatus.M{background:rgba(31,111,235,.2);color:var(--link)}
+.fstatus.D{background:rgba(248,81,73,.2);color:var(--del-text)}
+.fstatus.R{background:rgba(210,153,34,.2);color:var(--yellow)}
+.fstatus.C{background:rgba(137,87,229,.2);color:var(--accent3)}
+
+.diff-body{overflow-x:auto}
+.hunk-header{
+  background:var(--hunk-bg);border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+  padding:3px 14px;font-family:monospace;font-size:12px;color:var(--text3);
+}
+.hunk-header .range{color:var(--link)}
+.hunk-header .ctx{color:var(--text3);margin-left:6px}
+
+.diff-table{width:100%;border-collapse:collapse;font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:12.5px}
+.dl{display:flex;min-height:20px}
+.dl:hover{filter:brightness(1.06)}
+.ln{
+  width:44px;text-align:right;padding:0 8px 0 4px;
+  color:var(--text3);user-select:none;font-size:11px;flex-shrink:0;
+  border-right:1px solid var(--border2);line-height:20px;
+}
+.lc{flex:1;padding:0 8px;white-space:pre;overflow-x:auto;line-height:20px;word-break:normal}
+.dl.add{background:var(--add-bg)}
+.dl.add .ln{background:var(--add-bg);color:var(--add-text)}
+.dl.add .lc{background:var(--add-bg)}
+.dl.del{background:var(--del-bg)}
+.dl.del .ln{background:var(--del-bg);color:var(--del-text)}
+.dl.del .lc{background:var(--del-bg)}
+.dl.ctx .lc{background:var(--bg)}
+.dl.ctx .ln{background:var(--bg2)}
+.dl.noeol{opacity:.6}
+.sign{display:inline-block;width:12px;color:var(--text3);user-select:none}
+.dl.add .sign{color:var(--add-text)}
+.dl.del .sign{color:var(--del-text)}
+.binary-msg{padding:16px;text-align:center;color:var(--text2);font-size:13px}
+
+/* ====================================================================
+   DIFF SUMMARY BAR
+   ==================================================================== */
+.diff-summary{
+  background:var(--bg2);border:1px solid var(--border);border-radius:8px;
+  padding:11px 16px;margin-bottom:14px;
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.diff-summary b{font-weight:700}
+.chgbar{display:flex;gap:2px;height:8px;border-radius:4px;overflow:hidden;flex-shrink:0}
+.chgbar div{height:100%}
+.add-seg{background:var(--add-text)}
+.del-seg{background:var(--del-text)}
+.neu-seg{background:var(--bg5)}
+
+/* ====================================================================
+   COMMIT ITEMS
+   ==================================================================== */
+.commit-item{
+  padding:10px 14px;border-bottom:1px solid var(--border);
+  display:flex;align-items:flex-start;gap:10px;
+  cursor:pointer;transition:background .1s;
+}
+.commit-item:hover{background:var(--bg3)}
+.commit-item.active{background:var(--bg3);border-left:3px solid var(--accent2);padding-left:11px}
+.av{
+  width:30px;height:30px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;color:#fff;
+}
+.ci-info{flex:1;min-width:0}
+.ci-sub{font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ci-meta{font-size:11px;color:var(--text2);margin-top:2px}
+.ci-refs{display:flex;gap:4px;flex-wrap:wrap;margin-top:3px}
+.ref-chip{font-size:10px;padding:1px 6px;border-radius:10px}
+.ref-chip.branch{background:rgba(31,111,235,.2);color:var(--link)}
+.ref-chip.head{background:rgba(63,185,80,.2);color:var(--add-text)}
+.ref-chip.tag{background:rgba(210,153,34,.2);color:var(--yellow)}
+.ci-hash{font-family:monospace;font-size:11px;background:var(--bg3);padding:2px 6px;border-radius:4px;color:var(--link);border:1px solid var(--border);flex-shrink:0;white-space:nowrap}
+
+/* ====================================================================
+   STATUS ITEMS
+   ==================================================================== */
+.status-item{
+  padding:7px 12px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;cursor:pointer;transition:background .1s;
+}
+.status-item:hover{background:var(--bg3)}
+.st-badge{width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.st-badge.M{background:rgba(31,111,235,.2);color:var(--link)}
+.st-badge.A{background:rgba(63,185,80,.2);color:var(--add-text)}
+.st-badge.D{background:rgba(248,81,73,.2);color:var(--del-text)}
+.st-badge.R{background:rgba(210,153,34,.2);color:var(--yellow)}
+.st-badge.U{background:rgba(139,148,158,.2);color:var(--text3)}
+.st-badge.Q{background:rgba(139,148,158,.2);color:var(--text3)}
+.st-path{flex:1;font-family:monospace;font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.st-adddel{display:flex;gap:4px;font-size:11px;flex-shrink:0}
+
+/* ====================================================================
+   FILE TREE
+   ==================================================================== */
+.tree-row{
+  padding:4px 12px;display:flex;align-items:center;gap:6px;
+  cursor:pointer;font-family:monospace;font-size:12px;color:var(--text2);
+  transition:all .1s;white-space:nowrap;
+}
+.tree-row:hover{background:var(--bg3);color:var(--text)}
+
+/* ====================================================================
+   CONTRIBUTOR
+   ==================================================================== */
+.contrib-row{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.contrib-info{flex:1;min-width:0}
+.contrib-bar{height:4px;background:var(--bg4);border-radius:2px;margin-top:4px;overflow:hidden}
+.contrib-bar div{height:100%;background:var(--accent2);border-radius:2px;transition:width .3s}
+
+/* ====================================================================
+   COMPARE / RANGE DIFF
+   ==================================================================== */
+.compare-form{
+  background:var(--bg2);border:1px solid var(--border);border-radius:8px;
+  padding:16px;margin-bottom:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+}
+.compare-form select,.compare-form input{
+  background:var(--bg3);border:1px solid var(--border);color:var(--text);
+  padding:5px 10px;border-radius:6px;font-size:13px;min-width:160px;
+}
+.compare-form select:focus,.compare-form input:focus{outline:none;border-color:var(--accent2)}
+.compare-arrow{color:var(--text3);font-size:16px;font-weight:700}
+
+/* ====================================================================
+   ACTIVITY CHART
+   ==================================================================== */
+.activity-chart{
+  background:var(--bg2);border:1px solid var(--border);border-radius:8px;
+  padding:16px;margin-bottom:18px;overflow-x:auto;
+}
+.activity-title{font-size:13px;font-weight:600;margin-bottom:12px;color:var(--text)}
+.heatmap{display:flex;gap:3px}
+.hm-col{display:flex;flex-direction:column;gap:3px}
+.hm-cell{width:12px;height:12px;border-radius:2px;cursor:default;transition:transform .1s}
+.hm-cell:hover{transform:scale(1.3)}
+.hm-0{background:var(--bg4)}
+.hm-1{background:rgba(63,185,80,.3)}
+.hm-2{background:rgba(63,185,80,.55)}
+.hm-3{background:rgba(63,185,80,.75)}
+.hm-4{background:var(--add-text)}
+
+/* ====================================================================
+   BLAME VIEW
+   ==================================================================== */
+.blame-table{width:100%;border-collapse:collapse;font-family:monospace;font-size:12px}
+.bl-hash{width:60px;padding:1px 8px;color:var(--link);cursor:pointer;white-space:nowrap;user-select:none}
+.bl-hash:hover{text-decoration:underline}
+.bl-author{width:120px;padding:1px 8px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bl-date{width:90px;padding:1px 8px;color:var(--text3);white-space:nowrap}
+.bl-ln{width:44px;text-align:right;padding:1px 8px;color:var(--text3);user-select:none}
+.bl-code{padding:1px 8px;white-space:pre;color:var(--text)}
+.blame-table tr:hover td{background:var(--bg3)}
+.blame-table tr td{border-bottom:1px solid var(--border2)}
+
+/* ====================================================================
+   MISC UI
+   ==================================================================== */
+.section-title{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.section-title .cnt{font-size:12px;color:var(--text2);background:var(--bg3);padding:1px 8px;border-radius:12px;font-weight:400}
+.back-btn{display:inline-flex;align-items:center;gap:5px;color:var(--link);cursor:pointer;font-size:13px;margin-bottom:16px}
+.back-btn:hover{text-decoration:underline}
+.empty{text-align:center;padding:48px 24px;color:var(--text2)}
+.empty svg{opacity:.4;margin-bottom:12px}
+.empty h3{font-size:15px;margin-bottom:6px;color:var(--text)}
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px;color:var(--text2);gap:12px}
+.spinner{width:26px;height:26px;border:2px solid var(--border);border-top-color:var(--accent2);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.notif{
+  position:fixed;bottom:20px;right:20px;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:8px;padding:10px 16px;font-size:13px;
+  color:var(--text);z-index:999;
+  transform:translateY(20px);opacity:0;transition:all .2s;pointer-events:none;
+  box-shadow:0 4px 20px var(--shadow);
+}
+.notif.show{transform:translateY(0);opacity:1}
+.notif.ok{border-color:var(--accent)}
+.notif.err{border-color:var(--del-text)}
+code{background:var(--bg3);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:12px}
+.kbd{
+  display:inline-flex;align-items:center;padding:1px 6px;
+  background:var(--bg3);border:1px solid var(--border);border-radius:4px;
+  font-family:monospace;font-size:11px;color:var(--text2);
+}
+.mono{font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace}
+.separator{height:1px;background:var(--border);margin:8px 0}
+
+/* ── Commit detail panel ── */
+.commit-detail-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:8px;
+  padding:16px;margin-bottom:16px;
+}
+.commit-detail-card .subject{font-size:18px;font-weight:700;margin-bottom:8px;line-height:1.3}
+.commit-detail-card .body-text{
+  font-size:13px;color:var(--text2);white-space:pre-wrap;
+  border-left:3px solid var(--border);padding-left:12px;margin:10px 0;
+}
+.commit-meta-grid{display:flex;gap:20px;flex-wrap:wrap;margin-top:10px}
+.commit-meta-item{font-size:12px;color:var(--text2)}
+.commit-meta-item strong{color:var(--text)}
+.parent-link{font-family:monospace;font-size:11px;color:var(--link);cursor:pointer}
+.parent-link:hover{text-decoration:underline}
+
+/* ── tag / stash chips ── */
+.tag-row{padding:8px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.tag-name{font-family:monospace;font-size:12px;color:var(--yellow)}
+.tag-msg{flex:1;font-size:12px;color:var(--text2)}
+.stash-row{padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+.stash-row:hover{background:var(--bg3)}
+.stash-ref{font-family:monospace;font-size:11px;color:var(--link)}
+.stash-msg{font-size:13px;color:var(--text)}
+.stash-time{font-size:11px;color:var(--text3)}
+
+/* ── context line slider ── */
+.ctx-control{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)}
+.ctx-control input[type=range]{width:80px;accent-color:var(--accent2)}
+
+/* ── file inline mini-bar ── */
+.mini-add-del{display:flex;gap:3px;font-size:11px;align-items:center;flex-shrink:0}
+
+/* lang chart */
+.lang-bar{display:flex;height:8px;border-radius:4px;overflow:hidden;margin-bottom:10px}
+.lang-legend{display:flex;flex-wrap:wrap;gap:10px 16px}
+.lang-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2)}
+.lang-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+/* ── responsive ── */
+@media(max-width:700px){
+  .sidebar{position:absolute;z-index:100;height:calc(100% - 52px);top:52px;left:0;transform:translateX(-100%);transition:transform .2s}
+  .sidebar.mobile-open{transform:translateX(0)}
+  .sidebar.collapsed{transform:translateX(-100%)}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .main{padding:14px}
+  .topbar-pill{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ================================================================
+     TOP BAR
+================================================================ -->
+<div class="topbar">
+  <div class="brand" onclick="showOverview()">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+      <circle cx="12" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/>
+      <line x1="6" y1="9" x2="6" y2="15"/><path d="M18 9c0 3.866-2.686 7-6 9"/>
+    </svg>
+    <span>git-diff</span>
+  </div>
+  <div class="topbar-pill" id="topbarRepo">Loading...</div>
+  <div class="topbar-branch" id="topbarBranch">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><line x1="6" y1="9" x2="6" y2="15"/><path d="M18 9c0 3.866-2.686 7-6 9"/></svg>
+    <span id="branchName">—</span>
+  </div>
+  <div class="topbar-right">
+    <div class="theme-toggle" title="Switch theme">
+      <div class="theme-opt" onclick="setTheme('light')" id="t-light">☀️</div>
+      <div class="theme-opt active" onclick="setTheme('dark')" id="t-dark">🌙</div>
+      <div class="theme-opt" onclick="setTheme('amoled')" id="t-amoled">⚫</div>
+    </div>
+    <button class="btn" onclick="showCompare()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Compare
+    </button>
+    <button class="btn" onclick="refreshData()" title="Ctrl+R">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      Refresh
+    </button>
+    <button class="btn icon" onclick="toggleSidebar()" title="Toggle sidebar">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ================================================================
+     BODY
+================================================================ -->
+<div class="body">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="snav">
+      <div class="snav-tab active" onclick="switchNav('changes')" id="sn-changes">Changes</div>
+      <div class="snav-tab" onclick="switchNav('commits')" id="sn-commits">Commits</div>
+      <div class="snav-tab" onclick="switchNav('files')" id="sn-files">Files</div>
+      <div class="snav-tab" onclick="switchNav('info')" id="sn-info">Info</div>
+    </div>
+    <div class="sidebar-body" id="sidebarBody">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main" id="main">
+    <div class="loading"><div class="spinner"></div><div>Loading repository…</div></div>
+  </div>
+</div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<script>
+'use strict';
+// ================================================================
+// STATE
+// ================================================================
+let DATA = null;
+let sidebarVisible = true;
+let currentNav = 'changes';
+let commitCache = {};
+let currentTheme = localStorage.getItem('gd-theme') || 'dark';
+
+// ================================================================
+// BOOT
+// ================================================================
+(async () => {
+  applyTheme(currentTheme);
+  try {
+    const r = await fetch('/api/data');
+    DATA = await r.json();
+    hydrate();
+    showOverview();
+  } catch(e) {
+    setMain(`<div class="empty"><h3>Failed to connect</h3><p>${e.message}</p></div>`);
+  }
+})();
+
+function hydrate() {
+  const rp = DATA.repo;
+  document.title = `git-diff — ${rp.name}`;
+  _id('topbarRepo').textContent = rp.name;
+  _id('branchName').textContent = rp.current_branch;
+  switchNav(currentNav);
+}
+
+// ================================================================
+// THEME
+// ================================================================
+function applyTheme(t) {
+  currentTheme = t;
+  document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem('gd-theme', t);
+  ['dark','light','amoled'].forEach(x => _id('t-'+x)?.classList.toggle('active', x === t));
+}
+function setTheme(t) { applyTheme(t); }
+
+// ================================================================
+// SIDEBAR NAV
+// ================================================================
+function switchNav(tab) {
+  currentNav = tab;
+  ['changes','commits','files','info'].forEach(t =>
+    _id('sn-'+t)?.classList.toggle('active', t === tab)
+  );
+  if (!DATA) return;
+  const el = _id('sidebarBody');
+  if (tab === 'changes')  el.innerHTML = buildChangesNav();
+  else if (tab === 'commits') el.innerHTML = buildCommitsNav();
+  else if (tab === 'files')   el.innerHTML = buildFilesNav();
+  else if (tab === 'info')    el.innerHTML = buildInfoNav();
+}
+
+function toggleSidebar() {
+  sidebarVisible = !sidebarVisible;
+  _id('sidebar').classList.toggle('collapsed', !sidebarVisible);
+}
+
+// ── Changes nav ─────────────────────────────────────────────────
+function buildChangesNav() {
+  const s = DATA.staged_diff, u = DATA.unstaged_diff, st = DATA.status;
+  let h = `<div class="search-bar"><input class="search-input" placeholder="Filter files…" oninput="filterSidebarFiles(this)"></div>`;
+  if (st.length === 0) {
+    return h + `<div class="empty" style="padding:30px 20px">✨ Working tree clean</div>`;
+  }
+  if (s.files.length) {
+    h += sidebarSection(`Staged (${s.files.length})`, s.files.map(f =>
+      sidebarFileRow(f, `showStagedFile('${ea(f.new_path)}')`)).join(''));
+  }
+  if (u.files.length) {
+    h += sidebarSection(`Unstaged (${u.files.length})`, u.files.map(f =>
+      sidebarFileRow(f, `showUnstagedFile('${ea(f.new_path)}')`)).join(''));
+  }
+  return h;
+}
+
+function filterSidebarFiles(inp) {
+  const q = inp.value.toLowerCase();
+  inp.closest('.sidebar-body')?.querySelectorAll('.status-item').forEach(el => {
+    el.style.display = !q || el.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+function sidebarSection(title, content) {
+  return `<div style="padding:6px 12px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)">${E(title)}</div>${content}`;
+}
+
+function sidebarFileRow(f, onclick) {
+  const s = f.is_new ? 'A' : f.is_deleted ? 'D' : f.status === 'renamed' ? 'R' : 'M';
+  const path = f.new_path || f.old_path;
+  return `<div class="status-item" onclick="${onclick}">
+    <span class="st-badge ${s}">${s}</span>
+    <span class="st-path" title="${E(path)}">${E(path)}</span>
+    <span class="mini-add-del">
+      <span style="color:var(--add-text)">+${f.additions}</span>
+      <span style="color:var(--del-text)">-${f.deletions}</span>
+    </span>
+  </div>`;
+}
+
+// ── Commits nav ──────────────────────────────────────────────────
+function buildCommitsNav() {
+  let h = `<div class="search-bar"><input class="search-input" placeholder="Search commits…" oninput="filterCommitsNav(this)"></div>`;
+  h += DATA.commits.slice(0, 300).map(c => commitRow(c)).join('');
+  if (DATA.commits.length >= 300) {
+    h += `<div style="padding:8px;text-align:center"><button class="btn sm" onclick="loadMoreCommits()">Load more</button></div>`;
+  }
+  return h;
+}
+
+function filterCommitsNav(inp) {
+  const q = inp.value.toLowerCase();
+  inp.closest('.sidebar-body')?.querySelectorAll('.commit-item').forEach(el => {
+    el.style.display = !q || el.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+async function loadMoreCommits() {
+  const offset = DATA.commits.length;
+  try {
+    const r = await fetch(`/api/commits?limit=200&offset=${offset}`);
+    const d = await r.json();
+    DATA.commits.push(...d.commits);
+    switchNav('commits');
+  } catch(e) { notify('Failed to load more', 'err'); }
+}
+
+function commitRow(c) {
+  const init = avatarInit(c.author_name);
+  const col = avatarColor(c.author_name);
+  const refs = renderRefs(c.refs);
+  return `<div class="commit-item" id="cr-${c.hash}" onclick="showCommit('${c.hash}')">
+    <div class="av" style="background:${col}">${init}</div>
+    <div class="ci-info">
+      <div class="ci-sub" title="${E(c.subject)}">${E(c.subject)}</div>
+      <div class="ci-meta">${E(c.author_name)} · ${E(c.date_relative)}</div>
+      ${refs ? `<div class="ci-refs">${refs}</div>` : ''}
+    </div>
+    <div class="ci-hash">${c.short_hash}</div>
+  </div>`;
+}
+
+function renderRefs(refs) {
+  if (!refs) return '';
+  return refs.split(',').filter(r=>r.trim()).map(r => {
+    const rv = r.trim();
+    const cls = rv.startsWith('HEAD ->') ? 'head' : rv.startsWith('tag:') ? 'tag' : 'branch';
+    return `<span class="ref-chip ${cls}">${E(rv.replace('tag: ',''))}</span>`;
+  }).join('');
+}
+
+// ── Files nav ────────────────────────────────────────────────────
+function buildFilesNav() {
+  let h = `<div class="search-bar"><input class="search-input" placeholder="Filter files…" oninput="filterFilesNav(this)"></div>`;
+  h += `<div id="snFileList">` + DATA.file_tree.slice(0, 2000).map(f =>
+    `<div class="tree-row" onclick="showFileView('${ea(f.path)}')" title="${E(f.path)}">
+      ${fileIcon(f.path)}
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis">${E(f.path)}</span>
+    </div>`
+  ).join('') + `</div>`;
+  if (DATA.file_tree.length > 2000) {
+    h += `<div style="padding:8px 12px;font-size:11px;color:var(--text3)">Showing 2000 of ${DATA.file_tree.length} files</div>`;
+  }
+  return h;
+}
+
+function filterFilesNav(inp) {
+  const q = inp.value.toLowerCase();
+  _id('snFileList')?.querySelectorAll('.tree-row').forEach(el => {
+    el.style.display = !q || el.title.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+function fileIcon(path) {
+  const ext = path.split('.').pop().toLowerCase();
+  const colors = {
+    py:'#3572a5',js:'#f1e05a',ts:'#2b7489',jsx:'#61dafb',tsx:'#61dafb',
+    html:'#e34c26',css:'#563d7c',scss:'#c6538c',json:'#cbcb41',
+    md:'#083fa1',yml:'#cb171e',yaml:'#cb171e',sh:'#89e051',
+    go:'#00add8',rs:'#dea584',java:'#b07219',rb:'#701516',
+    php:'#4f5d95',c:'#555555',cpp:'#f34b7d',cs:'#178600',
+    txt:'#8b949e',gitignore:'#f05033',dockerfile:'#384d54',
+  };
+  const color = colors[ext] || '#8b949e';
+  return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>`;
+}
+
+// ── Info nav ─────────────────────────────────────────────────────
+function buildInfoNav() {
+  const r = DATA.repo;
+  let h = `<div style="padding:14px">`;
+  h += infoRow('Name', E(r.name));
+  h += infoRow('Path', `<span class="mono" style="font-size:11px;word-break:break-all">${E(r.path)}</span>`);
+  if (r.remote_url) h += infoRow('Remote', `<a href="${E(r.remote_url)}" target="_blank" style="font-size:11px;word-break:break-all">${E(r.remote_url)}</a>`);
+  h += infoRow('Branch', `<code>${E(r.current_branch)}</code>`);
+  h += infoRow('HEAD', `<code>${E(r.head_short)}</code>`);
+  h += infoRow('Commits', r.total_commits.toLocaleString());
+  h += infoRow('Files', DATA.file_tree.length.toLocaleString());
+  h += infoRow('Authors', r.contributors.length);
+  h += infoRow('Size', r.size);
+  h += infoRow('Git size', r.git_size);
+  h += infoRow('Since', r.first_commit_date);
+  h += `</div>`;
+
+  if (DATA.stashes.length) {
+    h += `<div style="padding:6px 12px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border);border-top:1px solid var(--border)">Stashes (${DATA.stashes.length})</div>`;
+    h += DATA.stashes.map(s => `<div class="stash-row" onclick="showStash('${ea(s.ref)}')">
+      <div class="stash-ref">${E(s.ref)}</div>
+      <div class="stash-msg">${E(s.message)}</div>
+      <div class="stash-time">${E(s.relative)}</div>
+    </div>`).join('');
+  }
+
+  if (DATA.repo.tags.length) {
+    h += `<div style="padding:6px 12px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border);border-top:1px solid var(--border)">Tags (${DATA.repo.tags.length})</div>`;
+    h += DATA.repo.tags.map(t => `<div class="tag-row">
+      <span class="tag-name">${E(t.name)}</span>
+      <span class="tag-msg">${E(t.message)}</span>
+      <span style="font-size:11px;color:var(--text3)">${E(t.date)}</span>
+    </div>`).join('');
+  }
+
+  return h;
+}
+
+function infoRow(lbl, val) {
+  return `<div style="display:flex;gap:8px;margin-bottom:7px;align-items:flex-start">
+    <span style="font-size:11px;color:var(--text2);width:72px;flex-shrink:0;padding-top:1px">${lbl}</span>
+    <span style="font-size:12px;flex:1">${val}</span>
+  </div>`;
+}
+
+// ================================================================
+// OVERVIEW
+// ================================================================
+function showOverview() {
+  if (!DATA) return;
+  const r = DATA.repo;
+  const s = DATA.staged_diff, u = DATA.unstaged_diff, st = DATA.status;
+
+  let html = `<div style="margin-bottom:20px">
+    <div style="font-size:24px;font-weight:800;margin-bottom:3px">${E(r.name)}</div>
+    ${r.remote_url ? `<a href="${E(r.remote_url)}" target="_blank" style="font-size:12px;color:var(--text2)">${E(r.remote_url)}</a>` : ''}
+  </div>`;
+
+  // Stats
+  html += `<div class="stats-grid">
+    ${statCard(r.total_commits.toLocaleString(), 'Commits', 'var(--add-text)', `showCommit('${r.head_short}')`)}
+    ${statCard(r.current_branch, 'Branch', 'var(--link)', '')}
+    ${statCard(r.branch_count, 'Branches', 'var(--yellow)', "showTab('branches')")}
+    ${statCard(r.tags.length, 'Tags', 'var(--accent3)', "showTab('branches')")}
+    ${statCard(r.contributors.length, 'Contributors', 'var(--orange)', "showTab('contributors')")}
+    ${statCard(DATA.file_tree.length.toLocaleString(), 'Files', 'var(--text2)', "switchNav('files')")}
+    ${statCard(`+${s.total_additions}`, 'Staged +', 'var(--add-text)', "showTab('changes')")}
+    ${statCard(`-${u.total_deletions}`, 'Unstaged −', 'var(--del-text)', "showTab('changes')")}
+  </div>`;
+
+  // Activity heatmap
+  html += buildHeatmap();
+
+  // Tabs
+  html += `<div class="ctabs">
+    <div class="ctab active" onclick="showTab('changes')" id="ct-changes">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      Changes <span class="badge">${st.length}</span>
+    </div>
+    <div class="ctab" onclick="showTab('history')" id="ct-history">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      History <span class="badge">${DATA.commits.length}</span>
+    </div>
+    <div class="ctab" onclick="showTab('contributors')" id="ct-contributors">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Contributors <span class="badge">${r.contributors.length}</span>
+    </div>
+    <div class="ctab" onclick="showTab('branches')" id="ct-branches">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><line x1="6" y1="9" x2="6" y2="15"/><path d="M18 9c0 3.866-2.686 7-6 9"/></svg>
+      Branches <span class="badge">${r.branches.length}</span>
+    </div>
+    <div class="ctab" onclick="showTab('langs')" id="ct-langs">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      Languages
+    </div>
+  </div>`;
+
+  // Tab panes
+  html += buildChangesPane(s, u, st);
+  html += buildHistoryPane();
+  html += buildContributorsPane(r.contributors);
+  html += buildBranchesPane(r);
+  html += buildLangsPane();
+
+  setMain(html);
+}
+
+function showTab(name) {
+  document.querySelectorAll('.tab-pane').forEach(e => e.classList.remove('active'));
+  document.querySelectorAll('.ctab').forEach(e => e.classList.remove('active'));
+  _id('tab-'+name)?.classList.add('active');
+  _id('ct-'+name)?.classList.add('active');
+}
+
+// ── Stat card ────────────────────────────────────────────────────
+function statCard(val, lbl, color, onclick) {
+  return `<div class="stat-card" ${onclick ? `onclick="${onclick}"` : ''}>
+    <div class="lbl">${lbl}</div>
+    <div class="val" style="color:${color}">${E(String(val))}</div>
+  </div>`;
+}
+
+// ── Heatmap ──────────────────────────────────────────────────────
+function buildHeatmap() {
+  const stats = DATA.commit_stats || {};
+  if (!Object.keys(stats).length) return '';
+
+  // Build 13 weeks × 7 days grid
+  const today = new Date(); today.setHours(0,0,0,0);
+  const cells = [];
+  for (let w = 12; w >= 0; w--) {
+    const col = [];
+    for (let d = 6; d >= 0; d--) {
+      const dt = new Date(today);
+      dt.setDate(today.getDate() - w * 7 - d);
+      const key = dt.toISOString().slice(0, 10);
+      col.push({ date: key, count: stats[key] || 0 });
+    }
+    cells.push(col);
+  }
+  const max = Math.max(...Object.values(stats), 1);
+
+  let h = `<div class="activity-chart">
+    <div class="activity-title">Commit activity — last 90 days</div>
+    <div class="heatmap">`;
+  cells.forEach(col => {
+    h += `<div class="hm-col">`;
+    col.forEach(cell => {
+      const lvl = cell.count === 0 ? 0 : cell.count < max * .25 ? 1 : cell.count < max * .5 ? 2 : cell.count < max * .75 ? 3 : 4;
+      h += `<div class="hm-cell hm-${lvl}" title="${cell.date}: ${cell.count} commit${cell.count !== 1 ? 's' : ''}"></div>`;
+    });
+    h += `</div>`;
+  });
+  h += `</div></div>`;
+  return h;
+}
+
+// ── Changes tab ──────────────────────────────────────────────────
+function buildChangesPane(s, u, st) {
+  let h = `<div class="tab-pane active" id="tab-changes">`;
+  if (s.total_files === 0 && u.total_files === 0) {
+    h += `<div class="empty"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><h3>Working tree clean</h3><p>Nothing to show.</p></div>`;
+  } else {
+    if (s.total_files) {
+      h += `<div class="section-title">Staged Changes <span class="cnt">${s.total_files} files</span></div>`;
+      h += diffSummaryBar(s);
+      h += renderDiffFiles(s.files, 'ov-staged');
+    }
+    if (u.total_files) {
+      h += `<div class="section-title" style="margin-top:20px">Unstaged Changes <span class="cnt">${u.total_files} files</span></div>`;
+      h += diffSummaryBar(u);
+      h += renderDiffFiles(u.files, 'ov-unstaged');
+    }
+  }
+  return h + `</div>`;
+}
+
+// ── History tab ───────────────────────────────────────────────────
+function buildHistoryPane() {
+  let h = `<div class="tab-pane" id="tab-history">`;
+  h += DATA.commits.slice(0, 100).map(c => commitRow(c)).join('');
+  if (DATA.commits.length > 100) h += `<div style="padding:10px;text-align:center;color:var(--text2);font-size:12px">Showing 100 of ${DATA.commits.length}. Use sidebar Commits tab to browse all.</div>`;
+  return h + `</div>`;
+}
+
+// ── Contributors tab ──────────────────────────────────────────────
+function buildContributorsPane(contribs) {
+  const max = contribs[0]?.commits || 1;
+  let h = `<div class="tab-pane" id="tab-contributors">`;
+  h += contribs.map(c => {
+    const pct = Math.round((c.commits / max) * 100);
+    const init = avatarInit(c.name);
+    return `<div class="contrib-row">
+      <div class="av" style="background:${avatarColor(c.name)};width:34px;height:34px;font-size:13px">${init}</div>
+      <div class="contrib-info">
+        <div style="font-size:13px;font-weight:600">${E(c.name)}</div>
+        <div style="font-size:11px;color:var(--text2)">${E(c.email)}</div>
+        <div class="contrib-bar" style="width:200px;max-width:100%"><div style="width:${pct}%"></div></div>
+      </div>
+      <div style="font-family:monospace;font-size:12px;color:var(--text2)">${c.commits.toLocaleString()} commits</div>
+    </div>`;
+  }).join('');
+  return h + `</div>`;
+}
+
+// ── Branches tab ──────────────────────────────────────────────────
+function buildBranchesPane(r) {
+  const localBranches = r.branches.filter(b => !b.is_remote);
+  const remoteBranches = r.branches.filter(b => b.is_remote);
+  let h = `<div class="tab-pane" id="tab-branches">`;
+
+  if (r.tags.length) {
+    h += `<div class="section-title">Tags <span class="cnt">${r.tags.length}</span></div>`;
+    h += r.tags.map(t => `<div class="tag-row" style="padding:9px 0;border-bottom:1px solid var(--border)">
+      <span class="tag-name" style="width:130px">${E(t.name)}</span>
+      <span class="tag-msg">${E(t.message)}</span>
+      <code style="font-size:11px">${E(t.hash)}</code>
+      <span style="font-size:11px;color:var(--text3)">${E(t.date)}</span>
+    </div>`).join('');
+    h += `<div style="margin-top:20px"></div>`;
+  }
+
+  h += `<div class="section-title">Local Branches <span class="cnt">${localBranches.length}</span></div>`;
+  h += localBranches.map(b => `<div style="padding:9px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text3);flex-shrink:0"><circle cx="12" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><line x1="6" y1="9" x2="6" y2="15"/><path d="M18 9c0 3.866-2.686 7-6 9"/></svg>
+    <span class="mono" style="font-size:13px;color:${b.is_current ? 'var(--add-text)' : 'var(--text)'}">${E(b.name)}</span>
+    ${b.is_current ? '<span class="pill add">current</span>' : `<button class="btn sm" onclick="showCompareWith('${ea(r.current_branch)}','${ea(b.name)}')">Diff vs current</button>`}
+    <span style="margin-left:auto;font-size:11px;color:var(--text3)">${E(b.date)}</span>
+  </div>`).join('');
+
+  if (remoteBranches.length) {
+    h += `<div class="section-title" style="margin-top:20px">Remote Branches <span class="cnt">${remoteBranches.length}</span></div>`;
+    h += remoteBranches.map(b => `<div style="padding:8px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text3)"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span class="mono" style="font-size:12px;color:var(--text2)">${E(b.name)}</span>
+      <span style="margin-left:auto;font-size:11px;color:var(--text3)">${E(b.date)}</span>
+    </div>`).join('');
+  }
+
+  return h + `</div>`;
+}
+
+// ── Languages tab ─────────────────────────────────────────────────
+function buildLangsPane() {
+  const langs = DATA.lang_stats || [];
+  const COLORS = ['#3572a5','#f1e05a','#2b7489','#e34c26','#563d7c','#cbcb41','#89e051','#dea584','#b07219','#701516','#f34b7d','#178600','#00add8','#c6538c','#383838'];
+  const total = langs.reduce((a, l) => a + l.count, 0) || 1;
+
+  let h = `<div class="tab-pane" id="tab-langs">`;
+  h += `<div class="lang-bar">`;
+  langs.slice(0, 15).forEach((l, i) => {
+    h += `<div style="flex:${l.count};background:${COLORS[i % COLORS.length]}" title="${l.ext}: ${l.pct}%"></div>`;
+  });
+  h += `</div><div class="lang-legend">`;
+  langs.slice(0, 20).forEach((l, i) => {
+    h += `<div class="lang-item">
+      <div class="lang-dot" style="background:${COLORS[i % COLORS.length]}"></div>
+      <span>${E(l.ext)}</span>
+      <span style="color:var(--text3)">${l.pct}%</span>
+      <span style="color:var(--text3)">(${l.count} files)</span>
+    </div>`;
+  });
+  h += `</div>`;
+  return h + `</div>`;
+}
+
+// ================================================================
+// DIFF RENDERING
+// ================================================================
+function diffSummaryBar(diff) {
+  const tot = diff.total_additions + diff.total_deletions || 1;
+  const aSegs = Math.round((diff.total_additions / tot) * 5);
+  const dSegs = Math.round((diff.total_deletions / tot) * 5);
+  const nSegs = Math.max(0, 5 - aSegs - dSegs);
+  const bar = `<div class="chgbar">
+    ${Array(aSegs).fill(`<div class="add-seg" style="flex:1"></div>`).join('')}
+    ${Array(dSegs).fill(`<div class="del-seg" style="flex:1"></div>`).join('')}
+    ${Array(nSegs).fill(`<div class="neu-seg" style="flex:1"></div>`).join('')}
+  </div>`;
+  return `<div class="diff-summary">
+    <b>${diff.total_files} files changed</b> ${bar}
+    <span style="color:var(--add-text)">+${diff.total_additions}</span>
+    <span style="color:var(--del-text)">-${diff.total_deletions}</span>
+  </div>`;
+}
+
+function renderDiffFiles(files, prefix) {
+  return files.map((f, i) => renderDiffFile(f, `${prefix}-${i}`)).join('');
+}
+
+function renderDiffFile(f, id) {
+  const s = f.is_new ? 'A' : f.is_deleted ? 'D' : f.status === 'renamed' ? 'R' : f.status === 'copied' ? 'C' : 'M';
+  const dispPath = f.status === 'renamed'
+    ? `${f.old_path} → ${f.new_path}`
+    : (f.new_path || f.old_path);
+
+  let simBadge = '';
+  if (f.similarity !== null && f.similarity !== undefined && f.status === 'renamed') {
+    simBadge = `<span class="pill na">${f.similarity}% similar</span>`;
+  }
+
+  return `<div class="diff-file">
+    <div class="diff-file-hdr" onclick="toggleFile('${id}')">
+      <span class="fstatus ${s}">${s}</span>
+      <span class="fpath" title="${E(dispPath)}">${E(dispPath)}</span>
+      <span class="fstats">
+        ${simBadge}
+        ${f.is_binary ? `<span class="pill na">Binary</span>` : `<span class="pill add">+${f.additions}</span><span class="pill del">-${f.deletions}</span>`}
+      </span>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="${id}-arr" style="flex-shrink:0"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div id="${id}-body" class="diff-body">${renderHunks(f, id)}</div>
+  </div>`;
+}
+
+function renderHunks(f, id) {
+  if (f.is_binary) return `<div class="binary-msg">⊘ Binary file — diff not available</div>`;
+  if (!f.hunks.length) return `<div class="binary-msg">No textual changes</div>`;
+
+  let h = '';
+  f.hunks.forEach(hunk => {
+    h += `<div class="hunk-header"><span class="range">@@ -${hunk.old_start},${hunk.old_count} +${hunk.new_start},${hunk.new_count} @@</span><span class="ctx"> ${E(hunk.context)}</span></div>`;
+    let oln = hunk.old_start, nln = hunk.new_start;
+    hunk.lines.forEach(l => {
+      let oNum = '', nNum = '';
+      if (l.type === 'del') { oNum = oln++; }
+      else if (l.type === 'add') { nNum = nln++; }
+      else if (l.type === 'ctx') { oNum = oln++; nNum = nln++; }
+      const sign = l.type === 'add' ? '+' : l.type === 'del' ? '-' : ' ';
+      h += `<div class="dl ${l.type}">
+        <div class="ln">${oNum}</div>
+        <div class="ln">${nNum}</div>
+        <div class="lc"><span class="sign">${sign}</span>${EH(l.content)}</div>
+      </div>`;
+    });
+  });
+  return h;
+}
+
+function toggleFile(id) {
+  const body = _id(id + '-body');
+  const arr = _id(id + '-arr');
+  if (!body) return;
+  const hidden = body.style.display === 'none';
+  body.style.display = hidden ? '' : 'none';
+  if (arr) arr.style.transform = hidden ? '' : 'rotate(-90deg)';
+}
+
+// ================================================================
+// COMMIT VIEW
+// ================================================================
+async function showCommit(hash) {
+  // Highlight sidebar
+  document.querySelectorAll('.commit-item').forEach(e => e.classList.remove('active'));
+  _id('cr-' + hash)?.classList.add('active');
+  switchNav('commits');
+
+  setMain(loadingHtml('Loading commit diff…'));
+  try {
+    if (!commitCache[hash]) {
+      const r = await fetch(`/api/commit?hash=${hash}`);
+      commitCache[hash] = await r.json();
+    }
+    const { diff, detail } = commitCache[hash];
+    renderCommitView(diff, detail);
+  } catch(e) {
+    setMain(`<div class="empty"><h3>Failed to load diff</h3><p>${e.message}</p></div>`);
+  }
+}
+
+function renderCommitView(diff, d) {
+  const init = avatarInit(d.author_name);
+  const col = avatarColor(d.author_name);
+
+  let h = backBtn('showOverview()');
+  h += `<div class="commit-detail-card">
+    <div class="subject">${E(d.subject)}</div>
+    ${d.body ? `<div class="body-text">${E(d.body)}</div>` : ''}
+    <div class="commit-meta-grid">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="av" style="background:${col};width:28px;height:28px;font-size:11px">${init}</div>
+        <div>
+          <div style="font-size:12px;font-weight:600">${E(d.author_name)}</div>
+          <div style="font-size:11px;color:var(--text2)">${E(d.author_email)}</div>
+        </div>
+      </div>
+      <div class="commit-meta-item"><strong>Date</strong><br>${E(d.date)} (${E(d.date_relative)})</div>
+      <div class="commit-meta-item"><strong>SHA</strong><br><code>${E(d.hash)}</code></div>
+      ${d.parents.length ? `<div class="commit-meta-item"><strong>Parent${d.parents.length > 1 ? 's' : ''}</strong><br>${d.parents.map(p => `<span class="parent-link" onclick="showCommit('${p}')">${p.slice(0,7)}</span>`).join(', ')}</div>` : ''}
+      ${d.is_merge ? `<div class="commit-meta-item"><strong>Type</strong><br><span style="color:var(--accent3)">Merge commit</span></div>` : ''}
+    </div>
+  </div>`;
+
+  h += `<div class="section-title">Files Changed <span class="cnt">${diff.total_files} files</span></div>`;
+  h += diff.total_files ? diffSummaryBar(diff) + renderDiffFiles(diff.files, 'commit') : `<div class="empty">No file changes</div>`;
+  setMain(h);
+}
+
+// ================================================================
+// STAGED / UNSTAGED SINGLE FILE
+// ================================================================
+function showStagedFile(path) {
+  const file = DATA.staged_diff.files.find(f => f.new_path === path || f.old_path === path);
+  if (!file) return showOverview();
+  let h = backBtn('showOverview()');
+  h += `<div class="section-title">Staged — ${E(path)}</div>`;
+  h += renderDiffFiles([file], 'sf');
+  setMain(h);
+}
+
+function showUnstagedFile(path) {
+  const file = DATA.unstaged_diff.files.find(f => f.new_path === path || f.old_path === path);
+  if (!file) return showOverview();
+  let h = backBtn('showOverview()');
+  h += `<div class="section-title">Unstaged — ${E(path)}</div>`;
+  h += renderDiffFiles([file], 'uf');
+  setMain(h);
+}
+
+// ================================================================
+// FILE VIEW (content + history + blame tabs)
+// ================================================================
+async function showFileView(path) {
+  setMain(loadingHtml(`Loading ${path}…`));
+  try {
+    const [fc, fl] = await Promise.all([
+      fetch(`/api/file?path=${encodeURIComponent(path)}`).then(r => r.json()),
+      fetch(`/api/file-log?path=${encodeURIComponent(path)}&limit=50`).then(r => r.json()),
+    ]);
+
+    const lines = fc.content.split('\n');
+    const lineHtml = lines.map((l, i) =>
+      `<div class="dl ctx"><div class="ln" style="width:55px">${i+1}</div><div class="lc">${EH(l)}</div></div>`
+    ).join('');
+
+    let h = backBtn('showOverview()');
+    h += `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+      ${fileIcon(path)}
+      <span class="mono" style="font-size:13px;font-weight:500">${E(path)}</span>
+      <span style="margin-left:auto;display:flex;gap:8px">
+        <span style="font-size:11px;color:var(--text2)">${lines.length} lines</span>
+        <button class="btn sm" onclick="showBlame('${ea(path)}')">Blame</button>
+      </span>
+    </div>
+
+    <div class="ctabs">
+      <div class="ctab active" onclick="showFTab('fcontent')" id="fct-fcontent">Content</div>
+      <div class="ctab" onclick="showFTab('fhistory')" id="fct-fhistory">History <span class="badge">${fl.commits.length}</span></div>
+    </div>
+
+    <div class="tab-pane active" id="tab-fcontent">
+      <div class="diff-file" style="overflow-x:auto">${lineHtml}</div>
+    </div>
+    <div class="tab-pane" id="tab-fhistory">
+      ${fl.commits.map(c => commitRow(c)).join('')}
+    </div>`;
+
+    setMain(h);
+  } catch(e) {
+    setMain(`<div class="empty"><h3>Failed to load file</h3><p>${e.message}</p></div>`);
+  }
+}
+
+function showFTab(id) {
+  document.querySelectorAll('.tab-pane').forEach(e => e.classList.remove('active'));
+  document.querySelectorAll('.ctab').forEach(e => e.classList.remove('active'));
+  _id('tab-' + id)?.classList.add('active');
+  _id('fct-' + id)?.classList.add('active');
+}
+
+async function showBlame(path) {
+  setMain(loadingHtml(`Running blame on ${path}…`));
+  try {
+    const r = await fetch(`/api/blame?path=${encodeURIComponent(path)}`);
+    const d = await r.json();
+    let h = backBtn(`showFileView('${ea(path)}')`);
+    h += `<div style="font-size:13px;font-weight:600;margin-bottom:10px">Blame — ${E(path)}</div>`;
+    h += `<div class="diff-file" style="overflow-x:auto"><table class="blame-table">`;
+    d.blame.forEach((l, i) => {
+      h += `<tr>
+        <td class="bl-hash" onclick="showCommit('${l.hash}')">${l.meta.short_hash || ''}</td>
+        <td class="bl-author">${E(l.meta.author || '')}</td>
+        <td class="bl-date">${E(l.meta.date || '')}</td>
+        <td class="bl-ln">${i+1}</td>
+        <td class="bl-code">${EH(l.content)}</td>
+      </tr>`;
+    });
+    h += `</table></div>`;
+    setMain(h);
+  } catch(e) {
+    setMain(`<div class="empty"><h3>Blame failed</h3><p>${e.message}</p></div>`);
+  }
+}
+
+// ================================================================
+// COMPARE (range diff)
+// ================================================================
+function showCompare() {
+  if (!DATA) return;
+  const refs = DATA.all_refs.map(r => r.name);
+  const branchOpts = DATA.repo.branches.map(b => `<option value="${E(b.name)}">${E(b.name)}</option>`).join('');
+  const refOpts = refs.map(r => `<option value="${E(r)}">${E(r)}</option>`).join('');
+
+  let h = backBtn('showOverview()');
+  h += `<div class="section-title">Compare Refs</div>
+  <div class="compare-form">
+    <div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:4px">Base</div>
+      <input id="cmpBase" list="cmpRefList" class="" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:13px;min-width:200px" placeholder="branch, tag or SHA" value="${E(DATA.repo.current_branch)}">
+    </div>
+    <div class="compare-arrow">→</div>
+    <div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:4px">Compare</div>
+      <input id="cmpCompare" list="cmpRefList" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:13px;min-width:200px" placeholder="branch, tag or SHA">
+    </div>
+    <datalist id="cmpRefList">${refOpts}</datalist>
+    <div style="display:flex;align-items:flex-end;gap:6px">
+      <button class="btn primary" onclick="runCompare()">Compare →</button>
+    </div>
+  </div>
+  <div id="compareResult"><div style="color:var(--text2);font-size:13px">Enter two refs above and click Compare.</div></div>`;
+  setMain(h);
+}
+
+function showCompareWith(base, compare) {
+  showCompare();
+  setTimeout(() => {
+    const b = _id('cmpBase'), c = _id('cmpCompare');
+    if (b) b.value = base;
+    if (c) c.value = compare;
+    runCompare();
+  }, 100);
+}
+
+async function runCompare() {
+  const base = _id('cmpBase')?.value.trim();
+  const compare = _id('cmpCompare')?.value.trim();
+  if (!base || !compare) { notify('Enter both refs', 'err'); return; }
+  const res = _id('compareResult');
+  if (res) res.innerHTML = loadingHtml('Comparing…');
+  try {
+    const r = await fetch(`/api/range-diff?base=${encodeURIComponent(base)}&compare=${encodeURIComponent(compare)}`);
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    let h = `<div class="diff-summary" style="margin-bottom:16px">
+      <b>${E(base)}</b> → <b>${E(compare)}</b>
+      &nbsp;·&nbsp; ${d.commits.length} commits &nbsp;·&nbsp;
+      <span style="color:var(--add-text)">+${d.diff.total_additions}</span>
+      <span style="color:var(--del-text)">-${d.diff.total_deletions}</span>
+    </div>`;
+    if (d.commits.length) {
+      h += `<div class="section-title" style="margin-bottom:8px">Commits in range <span class="cnt">${d.commits.length}</span></div>`;
+      h += d.commits.map(c =>
+        `<div class="commit-item" onclick="showCommit('${c.hash}')">
+          <div class="av" style="background:${avatarColor(c.author)};font-size:12px;width:28px;height:28px">${avatarInit(c.author)}</div>
+          <div class="ci-info"><div class="ci-sub">${E(c.subject)}</div><div class="ci-meta">${E(c.author)} · ${E(c.relative)}</div></div>
+          <div class="ci-hash">${c.short_hash}</div>
+        </div>`
+      ).join('');
+      h += `<div style="margin-top:16px"></div>`;
+    }
+    if (d.diff.total_files) {
+      h += `<div class="section-title">Changed Files <span class="cnt">${d.diff.total_files}</span></div>`;
+      h += diffSummaryBar(d.diff);
+      h += renderDiffFiles(d.diff.files, 'cmp');
+    } else {
+      h += `<div class="empty"><h3>No file differences</h3><p>These refs are identical.</p></div>`;
+    }
+    if (res) res.innerHTML = h;
+  } catch(e) {
+    if (res) res.innerHTML = `<div class="empty"><h3>Compare failed</h3><p>${e.message}</p></div>`;
+  }
+}
+
+// ================================================================
+// STASH VIEW
+// ================================================================
+async function showStash(ref) {
+  setMain(loadingHtml(`Loading stash ${ref}…`));
+  try {
+    const r = await fetch(`/api/stash?ref=${encodeURIComponent(ref)}`);
+    const d = await r.json();
+    let h = backBtn('showOverview()');
+    h += `<div class="section-title">Stash: ${E(ref)}</div>`;
+    h += d.diff.total_files ? diffSummaryBar(d.diff) + renderDiffFiles(d.diff.files, 'stash') : `<div class="empty">Empty stash</div>`;
+    setMain(h);
+  } catch(e) {
+    setMain(`<div class="empty"><h3>Failed to load stash</h3><p>${e.message}</p></div>`);
+  }
+}
+
+// ================================================================
+// REFRESH
+// ================================================================
+async function refreshData() {
+  notify('🔄 Refreshing…');
+  try {
+    await fetch('/api/refresh');
+    const r = await fetch('/api/data');
+    DATA = await r.json();
+    commitCache = {};
+    hydrate();
+    showOverview();
+    notify('✅ Refreshed!', 'ok');
+  } catch(e) {
+    notify('❌ Refresh failed', 'err');
+  }
+}
+
+// ================================================================
+// HELPERS
+// ================================================================
+function setMain(html) { _id('main').innerHTML = html; }
+function _id(id) { return document.getElementById(id); }
+function loadingHtml(msg) { return `<div class="loading"><div class="spinner"></div><div>${E(msg)}</div></div>`; }
+function backBtn(onclick) { return `<div class="back-btn" onclick="${onclick}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg> Back</div>`; }
+
+function E(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function EH(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function ea(s) {
+  return String(s || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+}
+
+function notify(msg, type='') {
+  const el = _id('notif');
+  el.textContent = msg;
+  el.className = `notif show ${type}`;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+const AV_COLORS = ['#1e88e5','#43a047','#e53935','#8e24aa','#f4511e','#00897b','#d81b60','#3949ab','#c0ca33','#00acc1'];
+function avatarColor(name) {
+  if (!name) return '#555';
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffffffff;
+  return AV_COLORS[Math.abs(h) % AV_COLORS.length];
+}
+function avatarInit(name) {
+  if (!name) return '?';
+  return name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+}
+
+// ================================================================
+// KEYBOARD SHORTCUTS
+// ================================================================
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'Escape') showOverview();
+  if ((e.metaKey || e.ctrlKey) && e.key === 'r') { e.preventDefault(); refreshData(); }
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); showCompare(); }
+  if ((e.metaKey || e.ctrlKey) && e.key === '\\') { e.preventDefault(); toggleSidebar(); }
+});
+</script>
+</body>
+</html>

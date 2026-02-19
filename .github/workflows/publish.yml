@@ -1,0 +1,117 @@
+name: Publish to PyPI
+
+on:
+  # Trigger manually from GitHub Actions tab (optionally bump version)
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "New version to publish (e.g. 0.2.0). Leave blank to use current."
+        required: false
+        default: ""
+      dry_run:
+        description: "Dry run — build but don't publish"
+        required: false
+        type: boolean
+        default: false
+
+  # Auto-publish when a GitHub Release is created
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+  id-token: write   # Required for OIDC trusted publisher (no API token needed!)
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────
+  # 1. Build wheel + sdist
+  # ──────────────────────────────────────────────────────────────────
+  build:
+    name: Build distribution packages
+    runs-on: ubuntu-latest
+
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Bump version (manual trigger with version input)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.version != ''
+        env:
+          NEW_VERSION: ${{ github.event.inputs.version }}
+        run: |
+          echo "Bumping version to $NEW_VERSION"
+          sed -i "s/^version = .*/version = \"$NEW_VERSION\"/" pyproject.toml
+          sed -i "s/__version__ = .*/__version__ = \"$NEW_VERSION\"/" git_diff/__init__.py
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add pyproject.toml git_diff/__init__.py
+          git commit -m "chore: release v$NEW_VERSION [skip ci]"
+          git tag "v$NEW_VERSION"
+          git push origin HEAD --tags
+
+      - name: Get version
+        id: get_version
+        run: |
+          VERSION=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])" 2>/dev/null || \
+                    python -c "import tomli; print(tomli.load(open('pyproject.toml','rb'))['project']['version'])" 2>/dev/null || \
+                    grep '^version' pyproject.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $VERSION"
+
+      - name: Install build tools
+        run: python -m pip install --upgrade pip hatchling build
+
+      - name: Build wheel and sdist
+        run: python -m build
+
+      - name: Verify build
+        run: |
+          ls -lh dist/
+          python -m pip install dist/*.whl
+          git-diff --version
+          python -c "import git_diff; print('Import OK:', git_diff.__version__)"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-packages
+          path: dist/
+          retention-days: 7
+
+  # ──────────────────────────────────────────────────────────────────
+  # 2. Publish to PyPI (skipped on dry run)
+  # ──────────────────────────────────────────────────────────────────
+  publish:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.dry_run != 'true' }}
+
+    environment:
+      name: pypi
+      url: https://pypi.org/p/git-diff
+
+    permissions:
+      id-token: write   # OIDC — no username/password/token needed
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-packages
+          path: dist/
+
+      - name: Publish to PyPI via trusted publisher
+        uses: pypa/gh-action-pypi-publish@release/v1
+        # Zero config needed when using OIDC trusted publisher
+        # No username, no password, no API token — just works ✅

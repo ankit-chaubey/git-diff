@@ -1,0 +1,58 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "git-diff"
+version = "0.1.0"
+description = "Beautiful git viewer in your browser — like GitHub, but local. Diffs, history, blame, compare branches/SHAs, contributors, and more."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [
+  { name = "Ankit Chaubey", email = "ankitchaubey.dev@gmail.com" },
+]
+keywords = [
+  "git", "diff", "viewer", "github", "cli", "developer-tools",
+  "git-diff", "code-review", "repository", "blame", "history",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Environment :: Web Environment",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Natural Language :: English",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Version Control :: Git",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Topic :: Utilities",
+]
+dependencies = []  # Zero runtime dependencies — pure Python stdlib
+
+[project.scripts]
+git-diff = "git_diff.cli:main"
+
+[project.urls]
+Homepage       = "https://github.com/ankit-chaubey/git-diff"
+Repository     = "https://github.com/ankit-chaubey/git-diff"
+"Bug Tracker"  = "https://github.com/ankit-chaubey/git-diff/issues"
+Changelog      = "https://github.com/ankit-chaubey/git-diff/releases"
+
+[tool.hatch.build.targets.wheel]
+packages = ["git_diff"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "git_diff/",
+  "README.md",
+  "LICENSE",
+  "CHANGELOG.md",
+]

@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package (editable)
+        run: pip install -e .
+
+      - name: Smoke test — import
+        run: python -c "import git_diff; print('Version:', git_diff.__version__)"
+
+      - name: Smoke test — CLI version
+        run: git-diff --version
+
+      - name: Smoke test — CLI help
+        run: git-diff --help
+
+      - name: Functional test — git data collection
+        run: |
+          python -c "
+          from git_diff.git_data import get_repo_root, collect_all_data, parse_diff
+          root = get_repo_root('.')
+          print('Root:', root)
+
+          # Test parse_diff
+          sample = '''diff --git a/hello.py b/hello.py
+          index abc..def 100644
+          --- a/hello.py
+          +++ b/hello.py
+          @@ -1,3 +1,4 @@
+           def hello():
+          -    print('hello')
+          +    print('hello world')
+          +    return True
+           '''.replace('          ', '')
+          result = parse_diff(sample)
+          assert result['total_files'] == 1
+          assert result['total_additions'] == 2
+          assert result['total_deletions'] == 1
+          print('parse_diff: OK')
+
+          # Collect full data from this repo
+          data = collect_all_data(root)
+          assert 'repo' in data
+          assert 'commits' in data
+          print('Repo:', data['repo']['name'])
+          print('Commits:', len(data['commits']))
+          print('Files:', len(data['file_tree']))
+          print('All tests passed!')
+          "
+
+      - name: Test server imports
+        run: |
+          python -c "
+          from git_diff.server import find_free_port, GitDiffHandler
+          port = find_free_port()
+          print('Free port found:', port)
+          assert 7433 <= port <= 7500
+          print('Server imports: OK')
+          "
