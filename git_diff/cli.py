@@ -35,7 +35,7 @@ Examples:
     parser.add_argument("--port", "-p", type=int, default=None,
                         help="Port to run on (default: auto-select 7433+)")
     parser.add_argument("--host", default="127.0.0.1",
-                        help="Host to bind to (default: 127.0.0.1)")
+                        help="Host to bind to (default: 127.0.0.1). Use 0.0.0.0 for LAN access.")
     parser.add_argument("--no-browser", action="store_true",
                         help="Don't automatically open browser")
     parser.add_argument("--path", type=str, default=None,

@@ -1,17 +1,11 @@
-"""
-git_data.py -- Comprehensive git repository data collection for git-diff.
-Collects everything: commits, diffs, branches, tags, stashes, stats, blame, log graphs.
-"""
+"""git_data.py -- git repository data collection for git-diff."""
 import subprocess
 import os
 import re
 from datetime import datetime
 from pathlib import Path
 
-
-# ---------------------------------------------------------------------------
 # Core git runner
-# ---------------------------------------------------------------------------
 
 def run_git(args, cwd=None, check=False, timeout=30):
     """Run a git command and return stdout. Never raises on failure."""
@@ -34,16 +28,12 @@ def run_git(args, cwd=None, check=False, timeout=30):
     except Exception:
         return ""
 
-
 def run_git_lines(args, cwd=None):
     """Run git command and return non-empty lines."""
     raw = run_git(args, cwd=cwd)
     return [l for l in raw.splitlines() if l.strip()]
 
-
-# ---------------------------------------------------------------------------
 # Repository discovery
-# ---------------------------------------------------------------------------
 
 def get_repo_root(path=None):
     """Get the root directory of the git repository."""
@@ -53,7 +43,6 @@ def get_repo_root(path=None):
         raise RuntimeError(f"Not a git repository (or any parent up to mount point): {cwd}")
     return root
 
-
 def is_git_repo(path=None):
     """Check if path is inside a git repo."""
     try:
@@ -62,13 +51,10 @@ def is_git_repo(path=None):
     except RuntimeError:
         return False
 
-
-# ---------------------------------------------------------------------------
 # Repository info
-# ---------------------------------------------------------------------------
 
-def get_repo_info(repo_root):
-    """Collect comprehensive repository metadata."""
+def get_repo_info(repo_root, fast=False):
+    """Collect repository metadata. When fast=True, skips contributor shortlog, disk-size walks, and ls-tree."""
     name = os.path.basename(repo_root)
 
     # Remote URLs
@@ -91,12 +77,12 @@ def get_repo_info(repo_root):
 
     # All branches
     branches_raw = run_git(
-        ["branch", "-a", "--format=%(refname:short)|%(objectname:short)|%(committerdate:short)|%(subject)"],
+        ["branch", "-a", "--format=%(refname:short)%x1f%(objectname:short)%x1f%(committerdate:short)%x1f%(subject)"],
         cwd=repo_root,
     )
     branches = []
     for line in branches_raw.splitlines():
-        parts = line.split("|", 3)
+        parts = line.split(_SEP, 3)
         branches.append({
             "name": parts[0].strip(),
             "hash": parts[1] if len(parts) > 1 else "",
@@ -110,13 +96,13 @@ def get_repo_info(repo_root):
     tags_raw = run_git(
         ["for-each-ref",
          "--sort=-version:refname",
-         "--format=%(refname:short)|%(objecttype)|%(taggerdate:short)|%(subject)|%(taggername)|%(objectname:short)",
+         "--format=%(refname:short)%x1f%(objecttype)%x1f%(taggerdate:short)%x1f%(subject)%x1f%(taggername)%x1f%(objectname:short)",
          "refs/tags"],
         cwd=repo_root,
     )
     tags = []
     for line in tags_raw.splitlines():
-        parts = line.split("|", 5)
+        parts = line.split(_SEP, 5)
         if parts:
             tags.append({
                 "name": parts[0],
@@ -128,46 +114,55 @@ def get_repo_info(repo_root):
             })
 
     # Contributors
-    contributors_raw = run_git(
-        ["shortlog", "-sne", "--no-merges", "HEAD"], cwd=repo_root
-    )
-    contributors = []
-    for line in contributors_raw.splitlines():
-        m = re.match(r"\s*(\d+)\s+(.+?)\s+<(.+?)>", line)
-        if m:
-            contributors.append({
-                "commits": int(m.group(1)),
-                "name": m.group(2).strip(),
-                "email": m.group(3).strip(),
-            })
+    if not fast:
+        contributors_raw = run_git(
+            ["shortlog", "-sne", "--no-merges", "HEAD"], cwd=repo_root
+        )
+        contributors = []
+        for line in contributors_raw.splitlines():
+            m = re.match(r"\s*(\d+)\s+(.+?)\s+<(.+?)>", line)
+            if m:
+                contributors.append({
+                    "commits": int(m.group(1)),
+                    "name": m.group(2).strip(),
+                    "email": m.group(3).strip(),
+                })
+    else:
+        contributors = []
 
     # Latest commit
     latest = get_commit_detail("HEAD", repo_root) if head_hash else {}
 
-    # Repo size (tracked files only)
-    try:
-        size_bytes = 0
-        for p in Path(repo_root).rglob("*"):
-            if p.is_file() and ".git" not in p.parts:
-                try:
-                    size_bytes += p.stat().st_size
-                except OSError:
-                    pass
-        size_str = _format_size(size_bytes)
-        size_bytes_val = size_bytes
-    except Exception:
-        size_str = "Unknown"
+    # Repo size: sum blob sizes from the git index
+    if not fast:
+        try:
+            ls_raw = run_git(["ls-tree", "-r", "--long", "HEAD"], cwd=repo_root)
+            size_bytes = 0
+            for ln in ls_raw.splitlines():
+                m = re.match(r"\d+ \w+ [0-9a-f]+\s+(\d+)\t", ln)
+                if m:
+                    size_bytes += int(m.group(1))
+            size_str = _format_size(size_bytes)
+            size_bytes_val = size_bytes
+        except Exception:
+            size_str = "Unknown"
+            size_bytes_val = 0
+    else:
+        size_str = ""
         size_bytes_val = 0
 
     # Git dir size
-    try:
-        git_dir = Path(repo_root) / ".git"
-        git_size = sum(
-            f.stat().st_size for f in git_dir.rglob("*") if f.is_file()
-        )
-        git_size_str = _format_size(git_size)
-    except Exception:
-        git_size_str = "Unknown"
+    if not fast:
+        try:
+            git_dir = Path(repo_root) / ".git"
+            git_size = sum(
+                f.stat().st_size for f in git_dir.rglob("*") if f.is_file()
+            )
+            git_size_str = _format_size(git_size)
+        except Exception:
+            git_size_str = "Unknown"
+    else:
+        git_size_str = ""
 
     # First commit date
     first_commit_raw = run_git(
@@ -198,7 +193,6 @@ def get_repo_info(repo_root):
         "first_commit_date": first_commit_date,
     }
 
-
 def _format_size(size_bytes):
     for unit in ["B", "KB", "MB", "GB", "TB"]:
         if size_bytes < 1024:
@@ -206,13 +200,12 @@ def _format_size(size_bytes):
         size_bytes /= 1024
     return f"{size_bytes:.1f} PB"
 
-
-# ---------------------------------------------------------------------------
 # Commit detail & history
-# ---------------------------------------------------------------------------
 
-_COMMIT_FMT = "%H|%h|%an|%ae|%at|%cn|%ce|%ct|%s|%P|%D"
-
+# Unit-separator (0x1f) is safe: virtually never appears in commit messages.
+# Using git's %x1f escape so the byte comes from git, not from shell.
+_SEP = "\x1f"
+_COMMIT_FMT = "%H%x1f%h%x1f%an%x1f%ae%x1f%at%x1f%cn%x1f%ce%x1f%ct%x1f%s%x1f%P%x1f%D"
 
 def get_commit_detail(ref, repo_root):
     """Get full detail of a single commit including body."""
@@ -249,10 +242,12 @@ def get_commit_detail(ref, repo_root):
         "body": "\n".join(body_lines).strip(),
     }
 
-
-def get_commit_history(repo_root, limit=300, branch="HEAD", author=None, path_filter=None, search=None):
-    """Get commit history with optional filters."""
-    args = ["log", f"--format={_COMMIT_FMT}", f"-{limit}", branch]
+def get_commit_history(repo_root, limit=300, offset=0, branch="HEAD", author=None, path_filter=None, search=None):
+    """Get commit history with optional filters. Uses --skip for true server-side pagination."""
+    args = ["log", f"--format={_COMMIT_FMT}", f"--max-count={limit}"]
+    if offset:
+        args.append(f"--skip={offset}")
+    args.append(branch)
     if author:
         args += [f"--author={author}"]
     if search:
@@ -265,7 +260,7 @@ def get_commit_history(repo_root, limit=300, branch="HEAD", author=None, path_fi
     for line in raw.splitlines():
         if not line.strip():
             continue
-        parts = line.split("|", 10)
+        parts = line.split(_SEP, 10)
         if len(parts) < 10:
             continue
         ts = int(parts[4]) if parts[4].strip().isdigit() else 0
@@ -285,7 +280,6 @@ def get_commit_history(repo_root, limit=300, branch="HEAD", author=None, path_fi
             "refs": parts[10].strip() if len(parts) > 10 else "",
         })
     return commits
-
 
 def _relative_time(ts):
     if not ts:
@@ -312,10 +306,7 @@ def _relative_time(ts):
     y = diff // 31536000
     return f"{y} year{'s' if y != 1 else ''} ago"
 
-
-# ---------------------------------------------------------------------------
 # Status
-# ---------------------------------------------------------------------------
 
 def get_status(repo_root):
     """Get detailed working tree status."""
@@ -341,10 +332,7 @@ def get_status(repo_root):
         })
     return files
 
-
-# ---------------------------------------------------------------------------
 # Diff parsing & fetching
-# ---------------------------------------------------------------------------
 
 def parse_diff(diff_raw, stat_raw=""):
     """Parse unified diff output into structured data with inline word-level diffs."""
@@ -473,11 +461,9 @@ def parse_diff(diff_raw, stat_raw=""):
         "stat_summary": stat_raw.strip().splitlines()[-1] if stat_raw.strip() else "",
     }
 
-
 def _finalize_file(f):
     f["additions"] = sum(h["additions"] for h in f["hunks"])
     f["deletions"] = sum(h["deletions"] for h in f["hunks"])
-
 
 def get_diff(repo_root, base=None, compare=None, staged=False, context=3, path_filter=None):
     """Universal diff fetcher: staged, unstaged, commit, or between any two refs."""
@@ -508,18 +494,14 @@ def get_diff(repo_root, base=None, compare=None, staged=False, context=3, path_f
     diff_raw = run_git(args, cwd=repo_root)
     return parse_diff(diff_raw, stat_raw)
 
-
 def get_commit_diff(commit_hash, repo_root, context=3):
     return get_diff(repo_root, base=commit_hash, context=context)
-
 
 def get_staged_diff(repo_root, context=3):
     return get_diff(repo_root, staged=True, context=context)
 
-
 def get_unstaged_diff(repo_root, context=3):
     return get_diff(repo_root, context=context)
-
 
 def get_range_diff(repo_root, base, compare, context=3):
     """Diff between two refs (branches, tags, SHAs)."""
@@ -527,10 +509,7 @@ def get_range_diff(repo_root, base, compare, context=3):
     diff_raw = run_git(["diff", f"-U{context}", f"{base}...{compare}"], cwd=repo_root)
     return parse_diff(diff_raw, stat_raw)
 
-
-# ---------------------------------------------------------------------------
 # File operations
-# ---------------------------------------------------------------------------
 
 def get_file_tree(repo_root, ref="HEAD"):
     """Get all tracked files with metadata."""
@@ -552,18 +531,15 @@ def get_file_tree(repo_root, ref="HEAD"):
             })
     return files
 
-
 def get_file_content(repo_root, path, ref="HEAD"):
     """Get file content at a given ref."""
     content = run_git(["show", f"{ref}:{path}"], cwd=repo_root)
     lines = content.splitlines()
     return {"content": content, "lines": len(lines), "path": path, "ref": ref}
 
-
 def get_file_log(repo_root, path, limit=50):
     """Get commit history for a specific file."""
     return get_commit_history(repo_root, limit=limit, path_filter=path)
-
 
 def get_file_blame(repo_root, path, ref="HEAD"):
     """Get blame for a file."""
@@ -592,17 +568,14 @@ def get_file_blame(repo_root, path, ref="HEAD"):
             })
     return lines
 
-
-# ---------------------------------------------------------------------------
 # Stashes
-# ---------------------------------------------------------------------------
 
 def get_stashes(repo_root):
     """Get stash list with details."""
-    raw = run_git(["stash", "list", "--format=%gd|%H|%s|%cr|%at"], cwd=repo_root)
+    raw = run_git(["stash", "list", "--format=%gd%x1f%H%x1f%s%x1f%cr%x1f%at"], cwd=repo_root)
     stashes = []
     for line in raw.splitlines():
-        parts = line.split("|", 4)
+        parts = line.split(_SEP, 4)
         if len(parts) >= 3:
             stashes.append({
                 "ref": parts[0],
@@ -613,17 +586,13 @@ def get_stashes(repo_root):
             })
     return stashes
 
-
 def get_stash_diff(repo_root, ref="stash@{0}", context=3):
     """Get diff for a stash entry."""
     diff_raw = run_git(["stash", "show", "-p", f"-U{context}", ref], cwd=repo_root)
     stat_raw = run_git(["stash", "show", "--stat", ref], cwd=repo_root)
     return parse_diff(diff_raw, stat_raw)
 
-
-# ---------------------------------------------------------------------------
 # Graph log
-# ---------------------------------------------------------------------------
 
 def get_graph_log(repo_root, limit=100, branch="HEAD"):
     """Get commit graph log (ASCII style data for UI)."""
@@ -633,10 +602,7 @@ def get_graph_log(repo_root, limit=100, branch="HEAD"):
     )
     return raw
 
-
-# ---------------------------------------------------------------------------
 # Statistics
-# ---------------------------------------------------------------------------
 
 def get_commit_stats_by_day(repo_root, days=90):
     """Get commit counts grouped by day for the past N days."""
@@ -648,7 +614,6 @@ def get_commit_stats_by_day(repo_root, days=90):
     counts = Counter(raw.splitlines())
     return dict(sorted(counts.items()))
 
-
 def get_commit_stats_by_author(repo_root):
     """Get commit counts per author."""
     raw = run_git(["shortlog", "-sn", "--no-merges", "HEAD"], cwd=repo_root)
@@ -659,22 +624,21 @@ def get_commit_stats_by_author(repo_root):
             result.append({"count": int(m.group(1)), "author": m.group(2).strip()})
     return result
 
-
 def get_language_stats(repo_root):
-    """Estimate language stats by file extension."""
+    """Estimate language stats by file extension using the git index (no untracked files)."""
     from collections import defaultdict
     ext_count = defaultdict(int)
     ext_size = defaultdict(int)
     try:
-        for p in Path(repo_root).rglob("*"):
-            if p.is_file() and ".git" not in p.parts:
-                ext = p.suffix.lower() or "(none)"
-                try:
-                    size = p.stat().st_size
-                    ext_count[ext] += 1
-                    ext_size[ext] += size
-                except OSError:
-                    pass
+        raw = run_git(["ls-tree", "-r", "--long", "HEAD"], cwd=repo_root)
+        for line in raw.splitlines():
+            m = re.match(r"\d+ \w+ [0-9a-f]+\s+(\d+|-)\t(.+)", line)
+            if m:
+                size = int(m.group(1)) if m.group(1) != "-" else 0
+                path = m.group(2)
+                ext = Path(path).suffix.lower() or "(none)"
+                ext_count[ext] += 1
+                ext_size[ext] += size
     except Exception:
         pass
     total_files = sum(ext_count.values()) or 1
@@ -685,15 +649,11 @@ def get_language_stats(repo_root):
         key=lambda x: -x["count"],
     )[:30]
 
-
-# ---------------------------------------------------------------------------
 # Refs resolution
-# ---------------------------------------------------------------------------
 
 def resolve_ref(repo_root, ref):
     """Resolve a ref to a full SHA."""
     return run_git(["rev-parse", ref], cwd=repo_root).strip()
-
 
 def get_all_refs(repo_root):
     """Get all refs (branches + tags + HEAD)."""
@@ -710,49 +670,97 @@ def get_all_refs(repo_root):
             refs.append({"name": parts[0], "hash": parts[1], "type": parts[2]})
     return refs
 
+# Untracked file support
 
-# ---------------------------------------------------------------------------
-# Master data collector
-# ---------------------------------------------------------------------------
+def get_untracked_content(repo_root, path):
+    """Return an untracked file as a 'new file' diff so the viewer can render it.
+
+    Reads the file from disk and builds a synthetic unified-diff string, then
+    runs it through parse_diff so the frontend receives the same structure as
+    any other diff.
+    """
+    full = Path(repo_root) / path
+    try:
+        content = full.read_text(encoding="utf-8", errors="replace")
+    except Exception:
+        return parse_diff("")
+    lines = content.splitlines()
+    count = len(lines)
+    # Build a minimal but valid unified diff
+    parts = [
+        f"diff --git a/{path} b/{path}",
+        "new file mode 100644",
+        "--- /dev/null",
+        f"+++ b/{path}",
+        f"@@ -0,0 +1,{count} @@",
+    ]
+    parts.extend("+" + l for l in lines)
+    return parse_diff("\n".join(parts))
+
+# Master data collector (fast initial load + lazy secondary load)
 
 def collect_all_data(repo_root):
-    """Collect all repository data for initial page load."""
-    print("  [1/10] Collecting repository metadata...")
-    repo_info = get_repo_info(repo_root)
+    """Collect data for initial load. collect_lazy_data() fills the rest."""
+    print("  [1/4] Repository metadata (fast)...")
+    repo_info = get_repo_info(repo_root, fast=True)
 
-    print("  [2/10] Collecting commit history (up to 500)...")
-    commits = get_commit_history(repo_root, limit=500)
-
-    print("  [3/10] Collecting working tree status...")
+    print("  [2/4] Working tree status...")
     status = get_status(repo_root)
 
-    print("  [4/10] Collecting staged diff...")
+    print("  [3/4] Staged diff...")
     staged_diff = get_staged_diff(repo_root)
 
-    print("  [5/10] Collecting unstaged diff...")
+    print("  [4/4] Unstaged diff...")
     unstaged_diff = get_unstaged_diff(repo_root)
-
-    print("  [6/10] Collecting file tree...")
-    file_tree = get_file_tree(repo_root)
-
-    print("  [7/10] Collecting stashes...")
-    stashes = get_stashes(repo_root)
-
-    print("  [8/10] Collecting commit stats (90 days)...")
-    commit_stats = get_commit_stats_by_day(repo_root, days=90)
-
-    print("  [9/10] Collecting language stats...")
-    lang_stats = get_language_stats(repo_root)
-
-    print("  [10/10] Collecting all refs...")
-    all_refs = get_all_refs(repo_root)
 
     return {
         "repo": repo_info,
-        "commits": commits,
         "status": status,
         "staged_diff": staged_diff,
         "unstaged_diff": unstaged_diff,
+        # Populated later by /api/lazy-data:
+        "commits": [],
+        "file_tree": [],
+        "stashes": [],
+        "commit_stats": {},
+        "lang_stats": [],
+        "all_refs": [],
+    }
+
+def collect_lazy_data(repo_root):
+    """Collect heavier data after initial load."""
+    print("  [1/7] Contributors...")
+    # Re-use full repo info for contributor/size fields
+    repo_extra = get_repo_info(repo_root, fast=False)
+    contributors = repo_extra.get("contributors", [])
+    size = repo_extra.get("size", "")
+    git_size = repo_extra.get("git_size", "")
+    size_bytes = repo_extra.get("size_bytes", 0)
+
+    print("  [2/7] Commit history (500)...")
+    commits = get_commit_history(repo_root, limit=500)
+
+    print("  [3/7] File tree...")
+    file_tree = get_file_tree(repo_root)
+
+    print("  [4/7] Stashes...")
+    stashes = get_stashes(repo_root)
+
+    print("  [5/7] Commit stats (90 days)...")
+    commit_stats = get_commit_stats_by_day(repo_root, days=90)
+
+    print("  [6/7] Language stats...")
+    lang_stats = get_language_stats(repo_root)
+
+    print("  [7/7] All refs...")
+    all_refs = get_all_refs(repo_root)
+
+    return {
+        "contributors": contributors,
+        "size": size,
+        "git_size": git_size,
+        "size_bytes": size_bytes,
+        "commits": commits,
         "file_tree": file_tree,
         "stashes": stashes,
         "commit_stats": commit_stats,

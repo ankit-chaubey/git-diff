@@ -1,6 +1,6 @@
 # git-diff 🔍
 
-> **Beautiful git viewer in your browser** — like GitHub, but local and instant.  
+> **Beautiful git viewer in your browser** like GitHub, but local and instant.  
 > No tokens. No accounts. No internet. Just `git-diff` and a browser tab.
 
 [![PyPI version](https://badge.fury.io/py/git-diff.svg)](https://pypi.org/project/git-diff/)
@@ -23,9 +23,9 @@ index 3f2a1b8..9c4d72e 100644
 ...
 ```
 
-Raw `git diff` in a terminal is painful — no syntax colors that actually help, no side-by-side view, no file navigation, no history, no blame. You have to mentally parse it line by line.
+Raw `git diff` in a terminal is painful no syntax colors that actually help, no side-by-side view, no file navigation, no history, no blame. You have to mentally parse it line by line.
 
-**git-diff** opens a GitHub-quality interface in your browser — right now, from any repo, with no setup.
+**git-diff** opens a GitHub-quality interface in your browser right now, from any repo, with no setup.
 
 ---
 
@@ -74,22 +74,22 @@ A browser tab opens automatically at `http://127.0.0.1:7433`.
 ### 🔀 Diff Viewer (GitHub-style)
 - Line-by-line diff with **line numbers**, color-coded `+` additions / `-` deletions
 - **Hunk headers** showing function/class context (`@@ ... @@ def my_function`)
-- **File status badges** — Added, Modified, Deleted, Renamed (with similarity %)
-- Collapsible files — click any file header to expand/collapse
+- **File status badges** Added, Modified, Deleted, Renamed (with similarity %)
+- Collapsible files click any file header to expand/collapse
 - Binary file detection
 - Support for **thousands of changed files** in a single view
 
 ### 📊 Repository Overview
 - Total commits, contributors, files, branches, tags, repo size
 - **Commit activity heatmap** (last 90 days, GitHub-style calendar)
-- **Language breakdown** — files and percentage by extension with color chart
+- **Language breakdown** files and percentage by extension with color chart
 
 ### 📜 Commit History
 - Browse **all commits** with author, date, relative time ("3 hours ago")
 - Click any commit to see its **full diff** instantly
 - **Merge commit** detection
 - Parent commit links (click to navigate)
-- Ref decoration — branch labels, HEAD pointer, tags
+- Ref decoration branch labels, HEAD pointer, tags
 - Search and filter commits in the sidebar
 
 ### 🔀 Compare Any Two Refs
@@ -106,8 +106,8 @@ A browser tab opens automatically at `http://127.0.0.1:7433`.
 ### 📁 File Browser
 - Browse all tracked files
 - **View file content** with syntax-aware line numbers
-- **File history** — all commits that touched a file
-- **Blame view** — who wrote which line, with commit hash and date
+- **File history** all commits that touched a file
+- **Blame view** who wrote which line, with commit hash and date
 - Filter by filename in sidebar
 
 ### 👥 Contributors
@@ -127,11 +127,11 @@ A browser tab opens automatically at `http://127.0.0.1:7433`.
 ### 🎨 3 Themes
 | Theme | Description |
 |-------|-------------|
-| 🌙 **Dark** | GitHub dark — easy on the eyes |
-| ☀️ **Light** | GitHub light — clean and crisp |
-| ⚫ **AMOLED** | True black — perfect for OLED screens |
+| 🌙 **Dark** | GitHub dark easy on the eyes |
+| ☀️ **Light** | GitHub light clean and crisp |
+| ⚫ **AMOLED** | True black perfect for OLED screens |
 
-Themes are **persisted** in `localStorage` — your preference sticks across sessions.
+Themes are **persisted** in `localStorage` your preference sticks across sessions.
 
 ### ⌨️  Keyboard Shortcuts
 | Shortcut | Action |
@@ -187,19 +187,19 @@ Everything runs **100% locally**. No data leaves your machine.
 `git-diff` internally uses these git operations to collect data:
 
 ```
-git rev-parse          — detect repo root, resolve refs
-git log                — commit history, activity stats, file history
-git show               — commit detail, file content at ref
-git diff               — staged, unstaged, commit diffs
-git status             — working tree status
-git blame              — line-level authorship
-git stash list/show    — stash entries and diffs
-git branch             — local and remote branches
-git for-each-ref       — tags with metadata
-git shortlog           — contributor stats
-git ls-tree            — tracked file listing
-git remote             — remote URLs
-git rev-list           — commit counts
+git rev-parse          detect repo root, resolve refs
+git log                commit history, activity stats, file history
+git show               commit detail, file content at ref
+git diff               staged, unstaged, commit diffs
+git status             working tree status
+git blame              line-level authorship
+git stash list/show    stash entries and diffs
+git branch             local and remote branches
+git for-each-ref       tags with metadata
+git shortlog           contributor stats
+git ls-tree            tracked file listing
+git remote             remote URLs
+git rev-list           commit counts
 ```
 
 ---
@@ -225,7 +225,7 @@ cd git-diff
 # Install in editable mode
 pip install -e .
 
-# Run on itself — great for testing!
+# Run on itself great for testing!
 git-diff
 ```
 

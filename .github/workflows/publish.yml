@@ -9,7 +9,7 @@ on:
         required: false
         default: ""
       dry_run:
-        description: "Dry run — build but don't publish"
+        description: "Dry run build but don't publish"
         required: false
         type: boolean
         default: false
@@ -102,7 +102,7 @@ jobs:
       url: https://pypi.org/p/git-diff
 
     permissions:
-      id-token: write   # OIDC — no username/password/token needed
+      id-token: write   # OIDC no username/password/token needed
 
     steps:
       - name: Download artifacts
@@ -114,4 +114,4 @@ jobs:
       - name: Publish to PyPI via trusted publisher
         uses: pypa/gh-action-pypi-publish@release/v1
         # Zero config needed when using OIDC trusted publisher
-        # No username, no password, no API token — just works ✅
+        # No username, no password, no API token just works ✅

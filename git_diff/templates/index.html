@@ -95,7 +95,7 @@ input,select{font-family:inherit}
 .sidebar-body{flex:1;overflow-y:auto;overflow-x:hidden}
 
 /* MAIN */
-.main{flex:1;overflow-y:auto;padding:16px 20px;min-width:0;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.main{flex:1;overflow-y:auto;padding:16px 20px 48px;min-width:0;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 
 /* ================================================================
    DIFF TOOLBAR
@@ -307,6 +307,7 @@ code{background:var(--bg3);padding:1px 5px;border-radius:3px;font-size:12px}
 .lang-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
 
 .vs-sentinel{height:1px;visibility:hidden}
+.diff-eof{text-align:center;padding:24px 0 8px;font-size:11px;color:var(--text3);letter-spacing:.6px;opacity:.55;user-select:none}
 
 /* ================================================================
    FOOTER
@@ -320,6 +321,16 @@ code{background:var(--bg3);padding:1px 5px;border-radius:3px;font-size:12px}
 .footer a:hover{color:var(--link);text-decoration:underline}
 .footer-left{display:flex;align-items:center;gap:6px}
 .footer-right{display:flex;align-items:center;gap:12px}
+.footer-copy{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:10px;color:var(--text3);
+  background:var(--bg3);border:1px solid var(--border);
+  padding:2px 9px 2px 7px;border-radius:20px;white-space:nowrap;
+}
+.footer-copy .copy-sym{font-size:11px;opacity:.6}
+.footer-copy .copy-year{font-weight:700;color:var(--text2);letter-spacing:.3px}
+.footer-copy .copy-name{font-weight:600;color:var(--text2)}
+.footer-copy .copy-all{opacity:.7}
 .version-badge{
   background:var(--bg3);border:1px solid var(--border);
   color:var(--text3);padding:1px 7px;border-radius:10px;
@@ -372,12 +383,17 @@ code{background:var(--bg3);padding:1px 5px;border-radius:3px;font-size:12px}
   .mn-btn.active{color:var(--add-text)}
   .mn-btn svg{transition:transform .12s}
   .mn-btn.active svg{transform:scale(1.1)}
-  /* body needs bottom padding for nav */
-  .body{padding-bottom:56px}
-  .notif{bottom:72px;right:10px;left:10px;text-align:center}
-  /* Footer compact on mobile */
-  .footer{padding:8px 12px;font-size:10px}
-  .footer-right{gap:8px}
+  /* app needs bottom padding so content clears footer + fixed mobile nav */
+  .app{padding-bottom:92px}
+  .notif{bottom:108px;right:10px;left:10px;text-align:center}
+  /* Footer: fixed strip above the mobile nav bar styled but compact */
+  .footer{position:fixed;bottom:56px;left:0;right:0;z-index:50;padding:5px 10px;font-size:10px;flex-wrap:nowrap;overflow:hidden;gap:6px}
+  .footer-right{display:none}
+  /* Prevent footer-left from shrinking or breaking "git-diff" at the hyphen */
+  .footer-left{flex-shrink:0;white-space:nowrap}
+  /* Hide separators and version badge to reclaim space */
+  .footer-sep{display:none}
+  .version-badge{display:none}
   /* Heatmap smaller on mobile */
   .hm-cell{width:9px;height:9px}
   .heatmap-months span{width:9px}
@@ -395,7 +411,43 @@ code{background:var(--bg3);padding:1px 5px;border-radius:3px;font-size:12px}
 @media(min-width:701px){
   .mnav{display:none}
   .sb-backdrop{display:none !important}
+  /* Footer: fixed at viewport bottom so it's always visible regardless of flex layout */
+  .footer{position:fixed;bottom:0;left:0;right:0;z-index:50}
+  /* Generous padding so even a wrapped 2-line footer never hides the last content row */
+  .main{padding-bottom:100px}
 }
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" id="hljs-theme-dark">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" id="hljs-theme-light" disabled>
+<style>
+/* ── tree nav ──────────────────────────────────────────────────── */
+.tree-node{user-select:none}
+.tree-dir{display:flex;align-items:center;gap:4px;padding:3px 6px 3px 0;cursor:pointer;border-radius:4px;font-size:12px;color:var(--text2)}
+.tree-dir:hover{background:var(--bg3);color:var(--text)}
+.tree-dir .tree-arrow{display:inline-block;width:14px;text-align:center;font-size:10px;transition:transform .15s;flex-shrink:0}
+.tree-dir.open .tree-arrow{transform:rotate(90deg)}
+.tree-children{display:none;padding-left:14px}
+.tree-children.open{display:block}
+.tree-file-row{display:flex;align-items:center;gap:4px;padding:3px 6px;cursor:pointer;border-radius:4px;font-size:12px;color:var(--text2)}
+.tree-file-row:hover{background:var(--bg3);color:var(--text)}
+/* ── global search ─────────────────────────────────────────────── */
+.gs-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:900;display:flex;align-items:flex-start;justify-content:center;padding-top:80px}
+.gs-box{background:var(--bg2);border:1px solid var(--border2);border-radius:10px;width:min(640px,92vw);max-height:70vh;display:flex;flex-direction:column;overflow:hidden}
+.gs-input-row{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border)}
+.gs-input-row input{flex:1;background:transparent;border:none;outline:none;font-size:15px;color:var(--text)}
+.gs-input-row .gs-close{cursor:pointer;font-size:18px;color:var(--text3)}
+.gs-results{overflow-y:auto;max-height:calc(70vh - 60px)}
+.gs-section{padding:6px 12px 2px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.gs-row{display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;border-bottom:1px solid var(--border2);font-size:12px}
+.gs-row:hover{background:var(--bg3)}
+.gs-row .gs-icon{width:16px;text-align:center;flex-shrink:0;color:var(--text3)}
+.gs-row .gs-main{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.gs-row .gs-sub{color:var(--text3);flex-shrink:0;font-size:11px}
+.gs-empty{padding:24px;text-align:center;color:var(--text3)}
+/* ── hljs line highlight integration ─────────────────────────── */
+.hljs-line{display:contents}
+pre.hljs-pre{margin:0;padding:0;background:transparent !important}
+code.hljs{background:transparent !important;padding:0;font-size:inherit;font-family:inherit}
 </style>
 </head>
 <body>
@@ -414,7 +466,7 @@ code{background:var(--bg3);padding:1px 5px;border-radius:3px;font-size:12px}
   <div class="topbar-pill" id="topbarRepo">Loading…</div>
   <div class="topbar-branch" id="topbarBranch">
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><line x1="6" y1="9" x2="6" y2="15"/><path d="M18 9c0 3.866-2.686 7-6 9"/></svg>
-    <span id="branchName">—</span>
+    <span id="branchName">...</span>
   </div>
   <div class="topbar-right">
     <div class="theme-toggle" title="Switch theme">
@@ -422,7 +474,11 @@ code{background:var(--bg3);padding:1px 5px;border-radius:3px;font-size:12px}
       <button class="theme-opt active" onclick="setTheme('dark')" id="t-dark">🌙</button>
       <button class="theme-opt" onclick="setTheme('amoled')" id="t-amoled">⚫</button>
     </div>
-    <button class="btn" onclick="showCompare()" title="Ctrl+K">
+    <button class="btn" onclick="openGlobalSearch()" title="Global search (Ctrl+K or /)">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Search
+    </button>
+    <button class="btn" onclick="showCompare()">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       Compare
     </button>
@@ -464,12 +520,14 @@ code{background:var(--bg3);padding:1px 5px;border-radius:3px;font-size:12px}
     <span class="footer-sep">·</span>
     <span class="version-badge">v0.1.2</span>
     <span class="footer-sep">·</span>
-    <span>© 2024–Present</span>
-    <span class="footer-sep">·</span>
-    <a href="https://github.com/ankit-chaubey" target="_blank" rel="noopener" style="font-weight:600;color:var(--text2)">
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:3px"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-      Ankit Chaubey
-    </a>
+    <span class="footer-copy">
+      <span class="copy-sym">©</span>
+      <span class="copy-year">2024–26</span>
+      <a href="https://github.com/ankit-chaubey" target="_blank" rel="noopener" class="copy-name" style="color:var(--text2);text-decoration:none;font-weight:600">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:2px;opacity:.65"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>Ankit Chaubey
+      </a>
+      <span class="copy-all">· All rights reserved.</span>
+    </span>
   </div>
   <div class="footer-right">
     <a href="https://github.com/ankit-chaubey/git-diff" target="_blank" rel="noopener" title="View source on GitHub">
@@ -515,7 +573,7 @@ code{background:var(--bg3);padding:1px 5px;border-radius:3px;font-size:12px}
 // ================================================================
 let DATA = null;
 let sidebarVisible = true;
-let currentNav = 'changes';
+let currentNav = localStorage.getItem('gd-nav') || 'changes';
 let commitCache = {};
 let currentTheme = localStorage.getItem('gd-theme') || 'dark';
 let diffFontSize = parseInt(localStorage.getItem('gd-fs') || '12', 10);
@@ -533,14 +591,63 @@ const fileDataMap = {}; // stores flattened lines for large files
     DATA = await r.json();
     hydrate();
     showOverview();
+    // Stream in heavier data without blocking the initial paint
+    fetchLazyData();
   } catch(e) {
     setMain(`<div class="empty"><h3>Failed to connect</h3><p>${e.message}</p></div>`);
   }
 })();
 
+async function fetchLazyData() {
+  try {
+    const r = await fetch('/api/lazy-data');
+    const d = await r.json();
+    DATA.commits = d.commits;
+    DATA.file_tree = d.file_tree;
+    DATA.stashes = d.stashes;
+    DATA.commit_stats = d.commit_stats;
+    DATA.lang_stats = d.lang_stats;
+    DATA.all_refs = d.all_refs;
+    // Merge contributor/size fields back into repo object
+    if (d.contributors) DATA.repo.contributors = d.contributors;
+    if (d.size) DATA.repo.size = d.size;
+    if (d.git_size) DATA.repo.git_size = d.git_size;
+    if (d.size_bytes) DATA.repo.size_bytes = d.size_bytes;
+    _onLazyDataReady();
+  } catch(e) {
+    console.warn('Lazy data load failed:', e);
+  }
+}
+
+function _onLazyDataReady() {
+  // Update commit count badge in history tab
+  const hBadge = document.querySelector('#ct-history .badge');
+  if (hBadge) hBadge.textContent = DATA.commits.length;
+  // Refresh sidebar nav if it's showing commits or files (they were empty before)
+  if (currentNav === 'commits' || currentNav === 'files' || currentNav === 'info') {
+    switchNav(currentNav);
+  }
+  // If history pane is currently visible, fill it in
+  const histPane = _id('tab-history');
+  if (histPane?.classList.contains('active')) {
+    const list = _id('hist-commit-list');
+    if (list) {
+      list.innerHTML = DATA.commits.slice(0,100).map(c=>commitRow(c)).join('');
+      if (DATA.commits.length > 100) list.innerHTML += `<div style="padding:10px;text-align:center;color:var(--text2);font-size:12px">Showing 100 of ${DATA.commits.length}. Use sidebar for more.</div>`;
+    }
+  }
+  // If overview is showing, refresh the heatmap and stats cards
+  const heatmap = document.querySelector('.activity-chart');
+  if (heatmap) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = buildHeatmap();
+    heatmap.replaceWith(tmp.firstElementChild);
+  }
+}
+
 function hydrate() {
   const rp = DATA.repo;
-  document.title = `git-diff — ${rp.name}`;
+  document.title = `git-diff: ${rp.name}`;
   _id('topbarRepo').textContent = rp.name;
   _id('branchName').textContent = rp.current_branch;
   switchNav(currentNav);
@@ -585,6 +692,7 @@ function toggleWrap() {
 // ================================================================
 function switchNav(tab) {
   currentNav = tab;
+  localStorage.setItem('gd-nav', tab);
   ['changes','commits','files','info'].forEach(t => _id('sn-'+t)?.classList.toggle('active', t === tab));
   if (!DATA) return;
   const el = _id('sidebarBody');
@@ -636,29 +744,12 @@ function showMobileHistory() {
   _id('main').scrollTop = 0;
 }
 
-function showMobileFiles() {
-  if (!DATA) return;
-  let h = backBtn('showOverview()');
-  h += `<div class="section-title">Files <span class="cnt">${DATA.file_tree.length}</span></div>`;
-  h += `<div class="search-bar" style="margin:-4px 0 12px;padding:0">
-    <input class="search-input" placeholder="Filter files…" oninput="filterMobileList(this,'mob-file-list')">
-  </div>`;
-  h += `<div id="mob-file-list">` + DATA.file_tree.slice(0, 1000).map(f =>
-    `<div class="tree-row" onclick="showFileView('${ea(f.path)}')" title="${E(f.path)}">
-      ${fileIcon(f.path)}
-      <span style="flex:1;overflow:hidden;text-overflow:ellipsis">${E(f.path)}</span>
-    </div>`).join('') + `</div>`;
-  if (DATA.file_tree.length > 1000) h += `<div style="padding:8px 0;font-size:11px;color:var(--text3)">Showing 1000 of ${DATA.file_tree.length} files</div>`;
-  setMain(h);
-  _id('main').scrollTop = 0;
-}
-
 function showMobileContribs() {
   if (!DATA) return;
   const r = DATA.repo;
   let h = backBtn('showOverview()');
   h += `<div class="section-title">Contributors <span class="cnt">${r.contributors.length}</span></div>`;
-  h += buildContributorsPane(r.contributors).replace('<div class="tab-pane" id="tab-contributors">','').replace('</div>','');
+  h += buildContributorsInner(r.contributors);
   setMain(h);
   _id('main').scrollTop = 0;
 }
@@ -673,11 +764,20 @@ function filterMobileList(inp, listId) {
 // ── Changes nav ──────────────────────────────────────────────────
 function buildChangesNav() {
   const s = DATA.staged_diff, u = DATA.unstaged_diff, st = DATA.status;
+  const untracked = st.filter(f => f.xy === '??');
   let h = `<div class="search-bar"><input class="search-input" placeholder="Filter files…" oninput="filterSidebarFiles(this)"></div>`;
   if (st.length === 0) return h + `<div class="empty" style="padding:30px 16px">✨ Working tree clean</div>`;
   if (s.files.length) h += sidebarSection(`Staged (${s.files.length})`, s.files.map(f => sidebarFileRow(f, `showStagedFile('${ea(f.new_path)}')`)).join(''));
   if (u.files.length) h += sidebarSection(`Unstaged (${u.files.length})`, u.files.map(f => sidebarFileRow(f, `showUnstagedFile('${ea(f.new_path)}')`)).join(''));
+  if (untracked.length) h += sidebarSection(`Untracked (${untracked.length})`, untracked.map(f => untrackedFileRow(f.path)).join(''));
   return h;
+}
+function untrackedFileRow(path) {
+  return `<div class="status-item" onclick="showUntrackedFile('${ea(path)}');closeMobileSidebar()">
+    <span class="st-badge" style="background:#555;color:#ccc;font-size:9px;min-width:14px;text-align:center">?</span>
+    <span class="st-path" title="${E(path)}">${E(path)}</span>
+    <span class="st-adddel" style="font-size:10px;color:var(--text3)">new</span>
+  </div>`;
 }
 function filterSidebarFiles(inp) {
   const q = inp.value.toLowerCase();
@@ -746,28 +846,94 @@ function renderRefs(refs) {
 
 // ── Files nav ────────────────────────────────────────────────────
 function buildFilesNav() {
-  let h = `<div class="search-bar"><input class="search-input" placeholder="Filter files…" oninput="filterFilesNav(this)"></div>`;
-  h += `<div id="snFileList">` + DATA.file_tree.slice(0, 2000).map(f =>
-    `<div class="tree-row" onclick="showFileView('${ea(f.path)}');closeMobileSidebar()" title="${E(f.path)}">
-      ${fileIcon(f.path)}
-      <span style="flex:1;overflow:hidden;text-overflow:ellipsis">${E(f.path)}</span>
-    </div>`).join('') + `</div>`;
-  if (DATA.file_tree.length > 2000) h += `<div style="padding:8px 10px;font-size:11px;color:var(--text3)">Showing 2000 of ${DATA.file_tree.length} files</div>`;
+  let h = `<div class="search-bar"><input class="search-input" placeholder="Filter files… (/ for global search)" oninput="filterFilesNav(this)"></div>`;
+  h += `<div id="snFileList">${renderTreeNav(buildDirTree(DATA.file_tree))}</div>`;
   return h;
 }
 function filterFilesNav(inp) {
   const q = inp.value.toLowerCase();
-  _id('snFileList')?.querySelectorAll('.tree-row').forEach(el => {
-    el.style.display = !q || el.title.toLowerCase().includes(q) ? '' : 'none';
-  });
+  if (!q) {
+    // restore tree
+    _id('snFileList').innerHTML = renderTreeNav(buildDirTree(DATA.file_tree));
+    return;
+  }
+  const matches = DATA.file_tree.filter(f => f.path.toLowerCase().includes(q));
+  _id('snFileList').innerHTML = matches.slice(0, 500).map(f =>
+    `<div class="tree-file-row" onclick="showFileView('${ea(f.path)}');closeMobileSidebar()" title="${E(f.path)}">
+      ${fileIcon(f.path)}
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis">${E(f.path)}</span>
+    </div>`).join('');
+}
+
+function buildDirTree(files) {
+  const root = {dirs:{}, files:[]};
+  for (const f of files) {
+    const parts = f.path.split('/');
+    let node = root;
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (!node.dirs[parts[i]]) node.dirs[parts[i]] = {dirs:{}, files:[]};
+      node = node.dirs[parts[i]];
+    }
+    node.files.push(f);
+  }
+  return root;
+}
+
+function renderTreeNav(node, depth=0) {
+  let h = '';
+  const dirs = Object.keys(node.dirs).sort();
+  const files = node.files.slice().sort((a,b) => a.name.localeCompare(b.name));
+  for (const dir of dirs) {
+    const uid = 'tn-' + Math.random().toString(36).slice(2);
+    h += `<div class="tree-node">
+      <div class="tree-dir open" onclick="toggleTreeDir(this,'${uid}')" style="padding-left:${depth*12+4}px">
+        <span class="tree-arrow">▶</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="var(--text3)" stroke="none"><path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis">${E(dir)}</span>
+      </div>
+      <div class="tree-children open" id="${uid}">${renderTreeNav(node.dirs[dir], depth+1)}</div>
+    </div>`;
+  }
+  for (const f of files) {
+    h += `<div class="tree-file-row" onclick="showFileView('${ea(f.path)}');closeMobileSidebar()" title="${E(f.path)}" style="padding-left:${depth*12+4}px">
+      ${fileIcon(f.path)}
+      <span style="overflow:hidden;text-overflow:ellipsis">${E(f.name)}</span>
+    </div>`;
+  }
+  return h;
+}
+
+function toggleTreeDir(el, childId) {
+  const open = el.classList.toggle('open');
+  const ch = _id(childId);
+  if (ch) ch.classList.toggle('open', open);
+}
+
+function showMobileFiles() {
+  if (!DATA) return;
+  let h = backBtn('showOverview()');
+  h += `<div class="section-title">Files <span class="cnt">${DATA.file_tree.length}</span></div>`;
+  h += `<div class="search-bar" style="margin:-4px 0 12px;padding:0">
+    <input class="search-input" placeholder="Filter files…" oninput="filterMobTree(this,'mob-tree')">
+  </div>`;
+  h += `<div id="mob-tree">${renderTreeNav(buildDirTree(DATA.file_tree))}</div>`;
+  setMain(h);
+  _id('main').scrollTop = 0;
+}
+function filterMobTree(inp, listId) {
+  const q = inp.value.toLowerCase();
+  if (!q) { _id(listId).innerHTML = renderTreeNav(buildDirTree(DATA.file_tree)); return; }
+  const matches = DATA.file_tree.filter(f => f.path.toLowerCase().includes(q));
+  _id(listId).innerHTML = matches.slice(0,500).map(f =>
+    `<div class="tree-file-row" onclick="showFileView('${ea(f.path)}')" title="${E(f.path)}">
+      ${fileIcon(f.path)}<span>${E(f.path)}</span>
+    </div>`).join('');
 }
 function fileIcon(path) {
   const ext = path.split('.').pop().toLowerCase();
   const c = {py:'#3572a5',js:'#f1e05a',ts:'#2b7489',jsx:'#61dafb',tsx:'#61dafb',html:'#e34c26',css:'#563d7c',scss:'#c6538c',json:'#cbcb41',md:'#083fa1',yml:'#cb171e',yaml:'#cb171e',sh:'#89e051',go:'#00add8',rs:'#dea584',java:'#b07219',rb:'#701516',php:'#4f5d95',c:'#555',cpp:'#f34b7d',cs:'#178600'};
   return `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="${c[ext]||'#8b949e'}" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>`;
 }
-
-// ── Info nav ─────────────────────────────────────────────────────
 function buildInfoNav() {
   const r = DATA.repo;
   const row = (lbl, val) => `<div style="display:flex;gap:8px;margin-bottom:6px;align-items:flex-start"><span style="font-size:11px;color:var(--text2);width:68px;flex-shrink:0;padding-top:1px">${lbl}</span><span style="font-size:12px;flex:1;word-break:break-all">${val}</span></div>`;
@@ -915,7 +1081,7 @@ function buildHeatmap() {
 
   let h = `<div class="activity-chart">
     <div class="activity-title" style="display:flex;align-items:center;justify-content:space-between">
-      <span>Commit activity — last 90 days</span>
+      <span>Commit activity: last 90 days</span>
       <span style="font-weight:400;color:var(--text3)">${totalCommits} commit${totalCommits!==1?'s':''}</span>
     </div>
     <div class="heatmap-wrap">
@@ -962,15 +1128,61 @@ function buildChangesPane(s, u, st) {
   return h + `</div>`;
 }
 function buildHistoryPane() {
-  let h = `<div class="tab-pane" id="tab-history">`;
-  h += DATA.commits.slice(0,100).map(c=>commitRow(c)).join('');
-  if (DATA.commits.length>100) h += `<div style="padding:10px;text-align:center;color:var(--text2);font-size:12px">Showing 100 of ${DATA.commits.length}. Use sidebar for more.</div>`;
-  return h + `</div>`;
+  const authorOpts = (DATA.repo.contributors || []).map(c =>
+    `<option value="${E(c.name)}">`).join('');
+  let h = `<div class="tab-pane" id="tab-history">
+    <div class="hist-filters" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px 0 10px;border-bottom:1px solid var(--border);margin-bottom:8px">
+      <input class="search-input" id="hf-search" placeholder="Message…" style="flex:2;min-width:100px">
+      <input class="search-input" id="hf-author" placeholder="Author…" list="hf-authors" style="flex:1;min-width:80px">
+      <datalist id="hf-authors">${authorOpts}</datalist>
+      <input class="search-input" id="hf-path" placeholder="Path…" style="flex:1;min-width:80px">
+      <button class="btn sm" onclick="applyHistoryFilter()">Filter</button>
+      <button class="btn sm" onclick="clearHistoryFilter()">Clear</button>
+    </div>
+    <div id="hist-commit-list">`;
+  if (!DATA.commits.length) {
+    h += `<div class="loading" style="padding:30px 0"><div class="spinner"></div><div>Loading commits…</div></div>`;
+  } else {
+    h += DATA.commits.slice(0, 100).map(c => commitRow(c)).join('');
+    if (DATA.commits.length > 100) h += `<div style="padding:10px;text-align:center;color:var(--text2);font-size:12px">Showing 100 of ${DATA.commits.length}. Use sidebar for more.</div>`;
+  }
+  return h + `</div></div>`;
 }
-function buildContributorsPane(contribs) {
+async function applyHistoryFilter() {
+  const search = _id('hf-search')?.value.trim();
+  const author = _id('hf-author')?.value.trim();
+  const filepath = _id('hf-path')?.value.trim();
+  const list = _id('hist-commit-list');
+  if (!list) return;
+  list.innerHTML = loadingHtml('Searching commits…');
+  try {
+    const params = new URLSearchParams({limit: '300'});
+    if (search) params.set('search', search);
+    if (author) params.set('author', author);
+    if (filepath) params.set('path', filepath);
+    const r = await fetch(`/api/commits?${params}`);
+    const d = await r.json();
+    if (!d.commits.length) {
+      list.innerHTML = `<div class="empty">No commits match your filter</div>`;
+      return;
+    }
+    list.innerHTML = d.commits.map(c => commitRow(c)).join('');
+  } catch(e) {
+    list.innerHTML = `<div class="empty">Filter failed: ${E(e.message)}</div>`;
+  }
+}
+function clearHistoryFilter() {
+  ['hf-search','hf-author','hf-path'].forEach(id => { const el=_id(id); if(el) el.value=''; });
+  const list = _id('hist-commit-list');
+  if (!list) return;
+  if (DATA.commits.length) {
+    list.innerHTML = DATA.commits.slice(0,100).map(c=>commitRow(c)).join('');
+    if (DATA.commits.length > 100) list.innerHTML += `<div style="padding:10px;text-align:center;color:var(--text2);font-size:12px">Showing 100 of ${DATA.commits.length}.</div>`;
+  }
+}
+function buildContributorsInner(contribs) {
   const max = contribs[0]?.commits || 1;
-  let h = `<div class="tab-pane" id="tab-contributors">`;
-  h += contribs.map(c => {
+  return contribs.map(c => {
     const pct = Math.round((c.commits/max)*100);
     return `<div class="contrib-row">
       <div class="av" style="background:${avatarColor(c.name)};width:32px;height:32px;font-size:12px">${avatarInit(c.name)}</div>
@@ -982,7 +1194,9 @@ function buildContributorsPane(contribs) {
       <div style="font-size:12px;color:var(--text2)">${c.commits.toLocaleString()}</div>
     </div>`;
   }).join('');
-  return h + `</div>`;
+}
+function buildContributorsPane(contribs) {
+  return `<div class="tab-pane" id="tab-contributors">${buildContributorsInner(contribs)}</div>`;
 }
 function buildBranchesPane(r) {
   const local = r.branches.filter(b=>!b.is_remote), remote = r.branches.filter(b=>b.is_remote);
@@ -1023,6 +1237,16 @@ function buildLangsPane() {
 function diffToolbar() {
   return `<div class="diff-toolbar">
     <div class="toolbar-group">
+      <button class="btn" onclick="prevHunk()" title="Previous hunk">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+        Prev
+      </button>
+      <button class="btn" onclick="nextHunk()" title="Next hunk">
+        Next
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+    </div>
+    <div class="toolbar-group">
       <button class="btn" onclick="zoomOut()" title="Zoom out (Ctrl+-)">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
       </button>
@@ -1044,6 +1268,31 @@ function diffToolbar() {
       Expand all
     </button>
   </div>`;
+}
+function prevHunk() {
+  const main = _id('main');
+  const headers = Array.from(main.querySelectorAll('.hunk-header'));
+  if (!headers.length) { notify('No hunks', ''); return; }
+  const threshold = main.scrollTop - 2;
+  for (let i = headers.length - 1; i >= 0; i--) {
+    if (headers[i].offsetTop < threshold) {
+      main.scrollTo({top: Math.max(0, headers[i].offsetTop - 56), behavior: 'smooth'});
+      return;
+    }
+  }
+  main.scrollTo({top: 0, behavior: 'smooth'});
+}
+function nextHunk() {
+  const main = _id('main');
+  const headers = Array.from(main.querySelectorAll('.hunk-header'));
+  if (!headers.length) { notify('No hunks', ''); return; }
+  const threshold = main.scrollTop + 2;
+  for (const h of headers) {
+    if (h.offsetTop > threshold) {
+      main.scrollTo({top: h.offsetTop - 56, behavior: 'smooth'});
+      return;
+    }
+  }
 }
 function collapseAll() {
   document.querySelectorAll('.diff-body').forEach(b => {
@@ -1080,7 +1329,9 @@ function diffSummaryBar(diff) {
 }
 
 function renderDiffFiles(files, prefix) {
-  return files.map((f, i) => renderDiffFile(f, `${prefix}-${i}`)).join('');
+  if (!files.length) return '';
+  return files.map((f, i) => renderDiffFile(f, `${prefix}-${i}`)).join('')
+    + `<div class="diff-eof">─── End of git-diff &bull; Thank you! ───</div>`;
 }
 
 function countLines(f) {
@@ -1111,7 +1362,7 @@ function renderDiffFile(f, id) {
     </div>
     <div id="${id}-body" class="diff-body ${wrapMode?'wrap-mode':''}">
       ${isLarge ? `<div class="lf-notice" id="${id}-lfn">
-        <span>⚡ Large file — ${lineCount} lines, loading progressively</span>
+        <span>⚡ Large file: ${lineCount} lines, loading progressively</span>
         <button class="btn sm" onclick="loadAll('${id}')">Load all</button>
       </div>` : ''}
       <div class="diff-inner dtw" id="${id}-inner" style="font-size:${diffFontSize}px">
@@ -1136,12 +1387,12 @@ function flattenFile(f) {
 }
 
 function buildFileContent(f, id, isLarge) {
-  if (f.is_binary) return `<div class="binary-msg">⊘ Binary file — diff not available</div>`;
+  if (f.is_binary) return `<div class="binary-msg">⊘ Binary file, diff not available</div>`;
   if (!f.hunks?.length) return `<div class="binary-msg">No textual changes</div>`;
 
   const segs = flattenFile(f);
   if (isLarge) {
-    fileDataMap[id] = {segs, rendered: 0};
+    fileDataMap[id] = {segs, rendered: CHUNK};
     return renderSegs(segs, 0, CHUNK) + sentinel(id);
   }
   return renderSegs(segs, 0, segs.length);
@@ -1157,7 +1408,7 @@ function renderSegs(segs, from, to) {
     } else {
       const {l,oN,nN} = seg;
       const sign = l.type==='add'?'+':l.type==='del'?'-':' ';
-      // Use data-copy attribute — never put user content inside onclick
+      // Use data-copy attribute; never put user content inside onclick
       h += `<div class="dl ${l.type}" data-copy="${EA(l.content)}">
         <div class="ln">${oN}</div>
         <div class="ln">${nN}</div>
@@ -1189,12 +1440,34 @@ function loadNextChunk(id) {
   frag.innerHTML = renderSegs(state.segs, from, to);
   inner.appendChild(frag.content);
   state.rendered = to;
+  // Apply pre-computed syntax highlights to newly added lines
+  if (state.hlLines) {
+    _applyStoredHighlights(inner, state.hlLines);
+  }
   if (to < state.segs.length) {
     const s2 = document.createElement('template');
     s2.innerHTML = sentinel(id);
     inner.appendChild(s2.content);
     setTimeout(observeSentinels, 0);
   }
+}
+
+// Apply a pre-computed array of hljs HTML strings to all .lc elements
+// in a container, matched by index.
+function _applyStoredHighlights(container, hlLines) {
+  container.querySelectorAll('.lc').forEach((el, i) => {
+    if (!hlLines[i]) return;
+    const sign = el.querySelector('.sign');
+    if (sign) {
+      let span = el.querySelector('.hl-content');
+      if (!span) { span = document.createElement('span'); span.className = 'hl-content'; }
+      span.innerHTML = hlLines[i];
+      while (sign.nextSibling) sign.nextSibling.remove();
+      el.appendChild(span);
+    } else {
+      el.innerHTML = hlLines[i];
+    }
+  });
 }
 
 function loadAll(id) {
@@ -1214,7 +1487,7 @@ function loadAll(id) {
 // IntersectionObserver for auto-progressive loading
 const io = new IntersectionObserver(entries => {
   entries.forEach(e => { if (e.isIntersecting) loadNextChunk(e.target.dataset.fid); });
-}, {rootMargin:'300px'});
+}, {root: document.getElementById('main'), rootMargin:'300px'});
 
 function observeSentinels() {
   document.querySelectorAll('.vs-sentinel:not([data-observed])').forEach(el => {
@@ -1277,7 +1550,7 @@ function renderCommitView(diff, d) {
         </div>
       </div>
       <div class="commit-meta-item"><strong>Date</strong><br>${E(d.date)} (${E(d.date_relative)})</div>
-      <div class="commit-meta-item"><strong>SHA</strong><br><code>${E(d.hash)}</code></div>
+      <div class="commit-meta-item"><strong>SHA</strong><br><code style="cursor:pointer;user-select:all" title="Click to copy" onclick="copyText('${d.hash}');notify('SHA copied!','ok')">${E(d.hash)}</code> <button class="btn sm" style="font-size:10px;padding:1px 6px;vertical-align:middle" onclick="copyText('${d.hash}')">Copy</button></div>
       ${d.parents.length ? `<div class="commit-meta-item"><strong>Parent${d.parents.length>1?'s':''}</strong><br>${d.parents.map(p=>`<span class="parent-link" onclick="showCommit('${p}')">${p.slice(0,7)}</span>`).join(', ')}</div>` : ''}
       ${d.is_merge ? `<div class="commit-meta-item"><strong>Type</strong><br><span style="color:var(--accent3)">Merge commit</span></div>` : ''}
     </div>
@@ -1295,14 +1568,41 @@ function renderCommitView(diff, d) {
 function showStagedFile(path) {
   const file = DATA.staged_diff.files.find(f=>f.new_path===path||f.old_path===path);
   if (!file) return showOverview();
-  setMain(backBtn('showOverview()') + `<div class="section-title">Staged — ${E(path)}</div>` + diffToolbar() + renderDiffFiles([file],'sf'));
+  setMain(backBtn('showOverview()') + `<div class="section-title">Staged: ${E(path)}</div>` + diffToolbar() + renderDiffFiles([file],'sf'));
   setTimeout(observeSentinels, 0);
 }
 function showUnstagedFile(path) {
   const file = DATA.unstaged_diff.files.find(f=>f.new_path===path||f.old_path===path);
-  if (!file) return showOverview();
-  setMain(backBtn('showOverview()') + `<div class="section-title">Unstaged — ${E(path)}</div>` + diffToolbar() + renderDiffFiles([file],'uf'));
+  if (!file) {
+    // May be an untracked file; route to the untracked viewer
+    const ut = DATA.status.find(f => f.path === path && f.xy === '??');
+    if (ut) return showUntrackedFile(path);
+    return showOverview();
+  }
+  setMain(backBtn('showOverview()') + `<div class="section-title">Unstaged: ${E(path)}</div>` + diffToolbar() + renderDiffFiles([file],'uf'));
   setTimeout(observeSentinels, 0);
+}
+async function showUntrackedFile(path) {
+  setMain(loadingHtml(`Loading ${path}…`));
+  try {
+    const r = await fetch(`/api/untracked?path=${encodeURIComponent(path)}`);
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    const diff = d.diff;
+    if (!diff || !diff.total_files) return showFileView(path);
+    let h = backBtn('showOverview()');
+    h += `<div class="section-title">Untracked: ${E(path)} <span class="cnt">new file</span></div>`;
+    h += `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:7px 12px;margin-bottom:10px;font-size:11px;color:var(--text2)">
+      This file is not tracked by git. Showing full content as additions.
+      <button class="btn sm" onclick="showFileView('${ea(path)}')" style="margin-left:8px">View raw</button>
+    </div>`;
+    h += diffToolbar() + renderDiffFiles(diff.files, 'ut');
+    setMain(h);
+    setTimeout(observeSentinels, 0);
+  } catch(e) {
+    // Fallback: show raw file content
+    showFileView(path);
+  }
 }
 
 // ================================================================
@@ -1338,9 +1638,12 @@ async function showFileView(path) {
 
     if (isLarge) {
       const id = 'fc';
+      const segs = lines.map((l,i) => ({t:'l', l:{type:'ctx',content:l}, oN:'', nN:i+1}));
       fileDataMap[id] = {
-        segs: lines.map((l,i) => ({t:'l', l:{type:'ctx',content:l}, oN:'', nN:i+1})),
-        rendered: 0
+        segs,
+        rendered: CHUNK,
+        path,        // store for progressive highlight
+        hlLines: null, // filled in by highlightFileContent below
       };
       h += renderSegs(fileDataMap[id].segs, 0, CHUNK) + sentinel(id);
     } else {
@@ -1351,7 +1654,7 @@ async function showFileView(path) {
     h += `</div></div></div></div>
     <div class="tab-pane" id="tab-fhistory">${fl.commits.map(c=>commitRow(c)).join('')}</div>`;
     setMain(h);
-    setTimeout(observeSentinels, 0);
+    setTimeout(() => { observeSentinels(); highlightFileContent('fc-inner', path); }, 0);
   } catch(e) {
     setMain(`<div class="empty"><h3>Failed to load file</h3><p>${e.message}</p></div>`);
   }
@@ -1368,7 +1671,7 @@ async function showBlame(path) {
     const r = await fetch(`/api/blame?path=${encodeURIComponent(path)}`);
     const d = await r.json();
     let h = backBtn(`showFileView('${ea(path)}')`);
-    h += `<div style="font-size:13px;font-weight:600;margin-bottom:10px">Blame — ${E(path)}</div>`;
+    h += `<div style="font-size:13px;font-weight:600;margin-bottom:10px">Blame: ${E(path)}</div>`;
     h += diffToolbar();
     h += `<div class="diff-file"><div class="diff-body"><div class="diff-inner dtw" style="font-size:${diffFontSize}px"><table class="blame-table">`;
     d.blame.forEach((l,i) => {
@@ -1491,7 +1794,7 @@ function backBtn(onclick) { return `<div class="back-btn" onclick="${onclick}"><
 function E(s) { if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function EH(s) { if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function ea(s) { return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
-// EA: escape for HTML attribute value (double-quotes) — safe for data-* attributes
+// EA: escape for HTML attribute value (double-quotes); safe for data-* attributes
 function EA(s) { if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function notify(msg, type='') {
@@ -1508,7 +1811,7 @@ async function copyText(text) {
 
 // ================================================================
 // DELEGATED EVENT: copy-line buttons (.clb)
-// Reads from data-copy on the parent .dl row — never uses inline onclick
+// Reads from data-copy on the parent .dl row; never uses inline onclick
 // ================================================================
 document.addEventListener('click', e => {
   const btn = e.target.closest('.clb');
@@ -1554,6 +1857,199 @@ document.addEventListener('touchmove', e => {
     applyFontSize(Math.round(pinchFs0 * (d/pinchD0)));
   }
 },{passive:true});
+</script>
+
+<!-- highlight.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+'use strict';
+
+// ================================================================
+// SYNTAX HIGHLIGHTING
+// ================================================================
+const _EXT_LANG = {
+  py:'python',js:'javascript',ts:'typescript',jsx:'javascript',tsx:'typescript',
+  html:'xml',htm:'xml',xml:'xml',css:'css',scss:'scss',json:'json',
+  md:'markdown',sh:'bash',bash:'bash',zsh:'bash',go:'go',rs:'rust',
+  java:'java',rb:'ruby',php:'php',c:'c',cpp:'cpp',cs:'csharp',
+  yml:'yaml',yaml:'yaml',toml:'ini',sql:'sql',swift:'swift',
+  kt:'kotlin',r:'r',lua:'lua',pl:'perl',ex:'elixir',exs:'elixir',
+};
+
+function hljsLang(path) {
+  const ext = (path || '').split('.').pop().toLowerCase();
+  return _EXT_LANG[ext] || null;
+}
+
+function highlightFileContent(containerId, path) {
+  if (typeof hljs === 'undefined') return;
+  const lang = hljsLang(path);
+  if (!lang) return;
+  const inner = _id(containerId);
+  if (!inner) return;
+
+  // For large files we pre-compute highlights from ALL lines (even those not yet
+  // rendered) so that progressive chunks come out correct.
+  const fdKey = containerId === 'fc-inner' ? 'fc' : null;
+  const state = fdKey ? fileDataMap[fdKey] : null;
+  if (state && state.segs) {
+    // Build raw text from all segments (rendered or not)
+    const allLines = state.segs
+      .filter(s => s.t === 'l')
+      .map(s => s.l?.content ?? '');
+    let fullHl;
+    try {
+      fullHl = hljs.highlight(allLines.join('\n'), {language: lang, ignoreIllegals: true}).value;
+    } catch { return; }
+    state.hlLines = fullHl.split('\n');
+    // Apply to the lines currently in the DOM
+    _applyStoredHighlights(inner, state.hlLines);
+    return;
+  }
+
+  // Standard path for small files / diff views
+  const lcs = inner.querySelectorAll('.lc');
+  if (!lcs.length) return;
+  const raw = Array.from(lcs).map(el => el.querySelector('.sign')
+    ? el.querySelector('.sign').nextSibling?.textContent ?? ''
+    : el.textContent
+  ).join('\n');
+  let highlighted;
+  try {
+    highlighted = hljs.highlight(raw, {language: lang, ignoreIllegals: true}).value;
+  } catch { return; }
+  const hlLines = highlighted.split('\n');
+  _applyStoredHighlights(inner, hlLines);
+}
+
+// Sync hljs theme with app theme
+function syncHljsTheme(theme) {
+  const dark = _id('hljs-theme-dark');
+  const light = _id('hljs-theme-light');
+  if (!dark || !light) return;
+  dark.disabled = (theme === 'light');
+  light.disabled = (theme !== 'light');
+}
+// Patch existing setTheme to also sync hljs
+const _origApplyTheme = applyTheme;
+window.applyTheme = function(t) { _origApplyTheme(t); syncHljsTheme(t); };
+syncHljsTheme(currentTheme);
+
+// ================================================================
+// GLOBAL FUZZY SEARCH  (Ctrl/Cmd+K  or  /)
+// ================================================================
+let _gsOpen = false;
+
+function openGlobalSearch() {
+  if (_gsOpen) return;
+  _gsOpen = true;
+  const overlay = document.createElement('div');
+  overlay.className = 'gs-overlay';
+  overlay.id = 'gs-overlay';
+  overlay.innerHTML = `
+    <div class="gs-box" onclick="event.stopPropagation()">
+      <div class="gs-input-row">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="gs-input" placeholder="Search commits, files, branches…" autocomplete="off" spellcheck="false">
+        <span class="gs-close" onclick="closeGlobalSearch()">✕</span>
+      </div>
+      <div class="gs-results" id="gs-results"><div class="gs-empty">Start typing to search…</div></div>
+    </div>`;
+  overlay.addEventListener('click', closeGlobalSearch);
+  document.body.appendChild(overlay);
+  const inp = _id('gs-input');
+  inp.focus();
+  inp.addEventListener('input', _gsSearch);
+  inp.addEventListener('keydown', _gsKey);
+}
+
+function closeGlobalSearch() {
+  _gsOpen = false;
+  _id('gs-overlay')?.remove();
+}
+
+function _gsKey(e) {
+  if (e.key === 'Escape') { closeGlobalSearch(); return; }
+  if (e.key === 'ArrowDown') { e.preventDefault(); _gsFocus(1); }
+  if (e.key === 'ArrowUp')   { e.preventDefault(); _gsFocus(-1); }
+  if (e.key === 'Enter') { _id('gs-results')?.querySelector('.gs-row')?.click(); }
+}
+
+function _gsFocus(dir) {
+  const rows = Array.from(_id('gs-results')?.querySelectorAll('.gs-row') || []);
+  const cur = rows.indexOf(document.activeElement);
+  const next = rows[Math.max(0, Math.min(rows.length-1, cur + dir))];
+  next?.focus();
+}
+
+function _gsSearch() {
+  const q = _id('gs-input')?.value.trim().toLowerCase();
+  const res = _id('gs-results');
+  if (!res || !DATA) return;
+  if (!q) { res.innerHTML = '<div class="gs-empty">Start typing to search…</div>'; return; }
+
+  let h = '';
+
+  // Commits
+  const commits = (DATA.commits || []).filter(c =>
+    c.subject?.toLowerCase().includes(q) ||
+    c.short_hash?.toLowerCase().includes(q) ||
+    c.author_name?.toLowerCase().includes(q)
+  ).slice(0, 6);
+  if (commits.length) {
+    h += `<div class="gs-section">Commits</div>`;
+    h += commits.map(c => `<div class="gs-row" tabindex="0" onclick="closeGlobalSearch();showCommit('${c.hash}')">
+      <span class="gs-icon">◎</span>
+      <span class="gs-main">${E(c.subject)}</span>
+      <span class="gs-sub">${E(c.short_hash)}</span>
+    </div>`).join('');
+  }
+
+  // Files
+  const files = (DATA.file_tree || []).filter(f => f.path.toLowerCase().includes(q)).slice(0, 8);
+  if (files.length) {
+    h += `<div class="gs-section">Files</div>`;
+    h += files.map(f => `<div class="gs-row" tabindex="0" onclick="closeGlobalSearch();showFileView('${ea(f.path)}')">
+      <span class="gs-icon">${fileIcon(f.path)}</span>
+      <span class="gs-main">${E(f.path)}</span>
+    </div>`).join('');
+  }
+
+  // Branches
+  const branches = (DATA.repo.branches || []).filter(b =>
+    !b.is_remote && b.name.toLowerCase().includes(q)
+  ).slice(0, 4);
+  if (branches.length) {
+    h += `<div class="gs-section">Branches</div>`;
+    h += branches.map(b => `<div class="gs-row" tabindex="0" onclick="closeGlobalSearch();showCompareWith('${ea(DATA.repo.current_branch)}','${ea(b.name)}')">
+      <span class="gs-icon">⎇</span>
+      <span class="gs-main">${E(b.name)}</span>
+      <span class="gs-sub">${b.is_current?'current':''}</span>
+    </div>`).join('');
+  }
+
+  // Tags
+  const tags = (DATA.repo.tags || []).filter(t => t.name.toLowerCase().includes(q)).slice(0, 4);
+  if (tags.length) {
+    h += `<div class="gs-section">Tags</div>`;
+    h += tags.map(t => `<div class="gs-row" tabindex="0" onclick="closeGlobalSearch();showCommit('${ea(t.hash)}')">
+      <span class="gs-icon">🏷</span>
+      <span class="gs-main">${E(t.name)}</span>
+      <span class="gs-sub">${E(t.date)}</span>
+    </div>`).join('');
+  }
+
+  res.innerHTML = h || '<div class="gs-empty">No results</div>';
+}
+
+// Keyboard shortcut: Ctrl/Cmd+K or / (when not in an input)
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); openGlobalSearch(); return; }
+  if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+    e.preventDefault(); openGlobalSearch();
+  }
+  if (e.key === 'Escape' && _gsOpen) closeGlobalSearch();
+});
 </script>
 </body>
 </html>
