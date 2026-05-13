@@ -1,7 +1,6 @@
 name: Publish to PyPI
 
 on:
-  # Trigger manually from GitHub Actions tab (optionally bump version)
   workflow_dispatch:
     inputs:
       version:
@@ -14,16 +13,14 @@ on:
         type: boolean
         default: false
 
-  # Auto-publish when a GitHub Release is created
   release:
     types: [published]
 
 permissions:
   contents: write
-  id-token: write   # Required for OIDC trusted publisher (no API token needed!)
+  id-token: write
 
 jobs:
-  # 1. Build wheel + sdist
   build:
     name: Build distribution packages
     runs-on: ubuntu-latest
@@ -86,7 +83,6 @@ jobs:
           path: dist/
           retention-days: 7
 
-  # 2. Publish to PyPI (skipped on dry run)
   publish:
     name: Publish to PyPI
     needs: build
@@ -98,7 +94,7 @@ jobs:
       url: https://pypi.org/p/git-diff
 
     permissions:
-      id-token: write   # OIDC no username/password/token needed
+      id-token: write
 
     steps:
       - name: Download artifacts
@@ -109,5 +105,3 @@ jobs:
 
       - name: Publish to PyPI via trusted publisher
         uses: pypa/gh-action-pypi-publish@release/v1
-        # Zero config needed when using OIDC trusted publisher
-        # No username, no password, no API token just works ✅

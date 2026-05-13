@@ -7,6 +7,11 @@ This project uses [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.1.4] 2026-05-13
+
+Fix footer and header
+---
+
 ## [0.1.3] 2026-05-13
 
 ### Added
