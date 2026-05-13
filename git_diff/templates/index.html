@@ -5,9 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
 <title>git-diff</title>
 <style>
-/* ================================================================
-   THEMES
-================================================================ */
+/* THEMES */
 :root,[data-theme="dark"]{
   --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;--bg5:#3d444d;
   --border:#30363d;--border2:#21262d;--text:#e6edf3;--text2:#8b949e;--text3:#6e7681;
@@ -34,9 +32,7 @@
   --yellow:#f9a825;--orange:#e65100;--shadow:rgba(0,0,0,.8);--scrollbar:#1a1a1a;
 }
 
-/* ================================================================
-   RESET & BASE
-================================================================ */
+/* RESET & BASE */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
 body{background:var(--bg);color:var(--text);font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:14px;line-height:1.5}
@@ -49,9 +45,7 @@ input,select{font-family:inherit}
 ::-webkit-scrollbar-thumb{background:var(--scrollbar);border-radius:3px}
 ::selection{background:rgba(31,111,235,.35)}
 
-/* ================================================================
-   LAYOUT
-================================================================ */
+/* LAYOUT */
 .app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
 
 /* TOP BAR */
@@ -97,34 +91,26 @@ input,select{font-family:inherit}
 /* MAIN */
 .main{flex:1;overflow-y:auto;padding:16px 20px 48px;min-width:0;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 
-/* ================================================================
-   DIFF TOOLBAR
-================================================================ */
+/* DIFF TOOLBAR */
 .diff-toolbar{display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-wrap:wrap}
 .toolbar-group{display:flex;align-items:center;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:2px;gap:1px}
 .toolbar-group .btn{background:none;border:none;padding:4px 8px;border-radius:4px;font-size:11px}
 .toolbar-group .btn:hover{background:var(--bg4)}
 .fs-indicator{font-size:11px;color:var(--text2);padding:0 6px;min-width:34px;text-align:center;user-select:none;line-height:1.8}
 
-/* ================================================================
-   SEARCH
-================================================================ */
+/* SEARCH */
 .search-bar{padding:8px 10px;border-bottom:1px solid var(--border);flex-shrink:0}
 .search-input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:6px;font-size:12px;transition:border-color .12s;font-family:inherit}
 .search-input:focus{outline:none;border-color:var(--accent2)}
 
-/* ================================================================
-   STATS CARDS
-================================================================ */
+/* STATS CARDS */
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:16px}
 .stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;cursor:pointer;transition:border-color .12s,transform .1s}
 .stat-card:hover{border-color:var(--text3);transform:translateY(-1px)}
 .stat-card .lbl{font-size:10px;color:var(--text2);margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px;font-weight:700}
 .stat-card .val{font-size:22px;font-weight:800;line-height:1.1;margin-bottom:1px}
 
-/* ================================================================
-   CONTENT TABS
-================================================================ */
+/* CONTENT TABS */
 .ctabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .ctab{padding:8px 14px;cursor:pointer;font-size:13px;color:var(--text2);border-bottom:2px solid transparent;transition:all .12s;display:flex;align-items:center;gap:5px;white-space:nowrap}
 .ctab:hover{color:var(--text)}
@@ -133,11 +119,9 @@ input,select{font-family:inherit}
 .tab-pane{display:none}
 .tab-pane.active{display:block}
 
-/* ================================================================
-   DIFF VIEWER - MOBILE FIRST
+/* DIFF VIEWER - MOBILE FIRST
    THE KEY FIX: diff-body handles horizontal scroll as ONE unit,
-   lines never scroll individually
-================================================================ */
+   lines never scroll individually */
 .diff-file{background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:10px;overflow:hidden}
 .diff-file-hdr{display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--bg3);border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s;user-select:none}
 .diff-file-hdr:hover{background:var(--bg4)}
@@ -190,18 +174,14 @@ input,select{font-family:inherit}
 /* LARGE FILE NOTICE */
 .lf-notice{background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.3);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--yellow);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:8px}
 
-/* ================================================================
-   DIFF SUMMARY BAR
-================================================================ */
+/* DIFF SUMMARY BAR */
 .diff-summary{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .chgbar{display:flex;gap:2px;height:8px;border-radius:4px;overflow:hidden;flex-shrink:0}
 .add-seg{background:var(--add-text);height:100%}
 .del-seg{background:var(--del-text);height:100%}
 .neu-seg{background:var(--bg5);height:100%}
 
-/* ================================================================
-   COMMITS
-================================================================ */
+/* COMMITS */
 .commit-item{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:9px;cursor:pointer;transition:background .1s}
 .commit-item:hover{background:var(--bg3)}
 .commit-item.active{background:var(--bg3);border-left:3px solid var(--accent2);padding-left:9px}
@@ -216,9 +196,7 @@ input,select{font-family:inherit}
 .ref-chip.tag{background:rgba(210,153,34,.2);color:var(--yellow)}
 .ci-hash{font-size:11px;background:var(--bg3);padding:2px 6px;border-radius:4px;color:var(--link);border:1px solid var(--border);flex-shrink:0}
 
-/* ================================================================
-   STATUS ITEMS
-================================================================ */
+/* STATUS ITEMS */
 .status-item{padding:7px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;cursor:pointer;transition:background .1s}
 .status-item:hover{background:var(--bg3)}
 .st-badge{width:17px;height:17px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0}
@@ -230,15 +208,11 @@ input,select{font-family:inherit}
 .st-path{flex:1;font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .st-adddel{display:flex;gap:4px;font-size:11px;flex-shrink:0}
 
-/* ================================================================
-   FILE TREE
-================================================================ */
+/* FILE TREE */
 .tree-row{padding:4px 10px;display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--text2);transition:all .1s;white-space:nowrap}
 .tree-row:hover{background:var(--bg3);color:var(--text)}
 
-/* ================================================================
-   MISC
-================================================================ */
+/* MISC */
 .section-title{font-size:14px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
 .section-title .cnt{font-size:11px;color:var(--text2);background:var(--bg3);padding:1px 7px;border-radius:10px;font-weight:500}
 .back-btn{display:inline-flex;align-items:center;gap:5px;color:var(--link);cursor:pointer;font-size:13px;margin-bottom:14px}
@@ -309,9 +283,7 @@ code{background:var(--bg3);padding:1px 5px;border-radius:3px;font-size:12px}
 .vs-sentinel{height:1px;visibility:hidden}
 .diff-eof{text-align:center;padding:24px 0 8px;font-size:11px;color:var(--text3);letter-spacing:.6px;opacity:.55;user-select:none}
 
-/* ================================================================
-   FOOTER
-================================================================ */
+/* FOOTER */
 .footer{
   flex-shrink:0;background:var(--bg2);border-top:1px solid var(--border);
   padding:10px 20px;display:flex;align-items:center;justify-content:space-between;
@@ -353,9 +325,7 @@ code{background:var(--bg3);padding:1px 5px;border-radius:3px;font-size:12px}
 .heatmap-outer{display:flex;align-items:flex-start}
 .heatmap-empty{text-align:center;padding:16px;color:var(--text3);font-size:12px}
 
-/* ================================================================
-   MOBILE
-================================================================ */
+/* MOBILE */
 @media(max-width:700px){
   .sidebar{position:absolute;z-index:150;height:calc(100% - 50px);top:50px;left:0;transform:translateX(-100%);transition:transform .25s ease;width:85vw !important;max-width:300px}
   .sidebar.mobile-open{transform:translateX(0)}
@@ -420,7 +390,7 @@ code{background:var(--bg3);padding:1px 5px;border-radius:3px;font-size:12px}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" id="hljs-theme-dark">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" id="hljs-theme-light" disabled>
 <style>
-/* ── tree nav ──────────────────────────────────────────────────── */
+/* tree nav */
 .tree-node{user-select:none}
 .tree-dir{display:flex;align-items:center;gap:4px;padding:3px 6px 3px 0;cursor:pointer;border-radius:4px;font-size:12px;color:var(--text2)}
 .tree-dir:hover{background:var(--bg3);color:var(--text)}
@@ -430,7 +400,7 @@ code{background:var(--bg3);padding:1px 5px;border-radius:3px;font-size:12px}
 .tree-children.open{display:block}
 .tree-file-row{display:flex;align-items:center;gap:4px;padding:3px 6px;cursor:pointer;border-radius:4px;font-size:12px;color:var(--text2)}
 .tree-file-row:hover{background:var(--bg3);color:var(--text)}
-/* ── global search ─────────────────────────────────────────────── */
+/* global search */
 .gs-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:900;display:flex;align-items:flex-start;justify-content:center;padding-top:80px}
 .gs-box{background:var(--bg2);border:1px solid var(--border2);border-radius:10px;width:min(640px,92vw);max-height:70vh;display:flex;flex-direction:column;overflow:hidden}
 .gs-input-row{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border)}
@@ -444,7 +414,7 @@ code{background:var(--bg3);padding:1px 5px;border-radius:3px;font-size:12px}
 .gs-row .gs-main{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
 .gs-row .gs-sub{color:var(--text3);flex-shrink:0;font-size:11px}
 .gs-empty{padding:24px;text-align:center;color:var(--text3)}
-/* ── hljs line highlight integration ─────────────────────────── */
+/* hljs line highlight integration */
 .hljs-line{display:contents}
 pre.hljs-pre{margin:0;padding:0;background:transparent !important}
 code.hljs{background:transparent !important;padding:0;font-size:inherit;font-family:inherit}
@@ -568,9 +538,7 @@ code.hljs{background:transparent !important;padding:0;font-size:inherit;font-fam
 <script>
 'use strict';
 
-// ================================================================
 // STATE
-// ================================================================
 let DATA = null;
 let sidebarVisible = true;
 let currentNav = localStorage.getItem('gd-nav') || 'changes';
@@ -581,9 +549,7 @@ let wrapMode = localStorage.getItem('gd-wrap') === '1';
 const CHUNK = 200; // lines per progressive render
 const fileDataMap = {}; // stores flattened lines for large files
 
-// ================================================================
 // BOOT
-// ================================================================
 (async () => {
   applyTheme(currentTheme);
   try {
@@ -653,9 +619,7 @@ function hydrate() {
   switchNav(currentNav);
 }
 
-// ================================================================
 // THEME
-// ================================================================
 function applyTheme(t) {
   currentTheme = t;
   document.documentElement.setAttribute('data-theme', t);
@@ -664,9 +628,7 @@ function applyTheme(t) {
 }
 function setTheme(t) { applyTheme(t); }
 
-// ================================================================
 // FONT SIZE / ZOOM
-// ================================================================
 function applyFontSize(sz) {
   diffFontSize = Math.min(24, Math.max(8, sz));
   localStorage.setItem('gd-fs', diffFontSize);
@@ -677,9 +639,7 @@ function zoomIn() { applyFontSize(diffFontSize + 1); }
 function zoomOut() { applyFontSize(diffFontSize - 1); }
 function zoomReset() { applyFontSize(12); }
 
-// ================================================================
 // WRAP MODE
-// ================================================================
 function toggleWrap() {
   wrapMode = !wrapMode;
   localStorage.setItem('gd-wrap', wrapMode ? '1' : '0');
@@ -687,9 +647,7 @@ function toggleWrap() {
   document.querySelectorAll('.wrap-btn').forEach(b => b.classList.toggle('active-btn', wrapMode));
 }
 
-// ================================================================
 // SIDEBAR NAV
-// ================================================================
 function switchNav(tab) {
   currentNav = tab;
   localStorage.setItem('gd-nav', tab);
@@ -729,9 +687,7 @@ function setMN(id) {
   _id('mn-' + id)?.classList.add('active');
 }
 
-// ================================================================
 // MOBILE DIRECT VIEWS (render content straight into main, no sidebar needed)
-// ================================================================
 function showMobileHistory() {
   if (!DATA) return;
   let h = backBtn('showOverview()');
@@ -761,7 +717,7 @@ function filterMobileList(inp, listId) {
   });
 }
 
-// ── Changes nav ──────────────────────────────────────────────────
+// Changes nav
 function buildChangesNav() {
   const s = DATA.staged_diff, u = DATA.unstaged_diff, st = DATA.status;
   const untracked = st.filter(f => f.xy === '??');
@@ -801,7 +757,7 @@ function sidebarFileRow(f, onclick) {
   </div>`;
 }
 
-// ── Commits nav ──────────────────────────────────────────────────
+// Commits nav
 function buildCommitsNav() {
   let h = `<div class="search-bar"><input class="search-input" placeholder="Search commits…" oninput="filterCommitsNav(this)"></div>`;
   h += DATA.commits.slice(0, 300).map(c => commitRow(c)).join('');
@@ -844,7 +800,7 @@ function renderRefs(refs) {
   }).join('');
 }
 
-// ── Files nav ────────────────────────────────────────────────────
+// Files nav
 function buildFilesNav() {
   let h = `<div class="search-bar"><input class="search-input" placeholder="Filter files… (/ for global search)" oninput="filterFilesNav(this)"></div>`;
   h += `<div id="snFileList">${renderTreeNav(buildDirTree(DATA.file_tree))}</div>`;
@@ -965,9 +921,7 @@ function buildInfoNav() {
   return h;
 }
 
-// ================================================================
 // OVERVIEW
-// ================================================================
 function showOverview() {
   if (!DATA) return;
   const r = DATA.repo, s = DATA.staged_diff, u = DATA.unstaged_diff, st = DATA.status;
@@ -1231,9 +1185,7 @@ function buildLangsPane() {
   return h + `</div></div>`;
 }
 
-// ================================================================
 // DIFF TOOLBAR
-// ================================================================
 function diffToolbar() {
   return `<div class="diff-toolbar">
     <div class="toolbar-group">
@@ -1310,9 +1262,7 @@ function expandAll() {
   setTimeout(observeSentinels, 0);
 }
 
-// ================================================================
 // DIFF RENDERING + PROGRESSIVE LOADING
-// ================================================================
 function diffSummaryBar(diff) {
   const tot = diff.total_additions + diff.total_deletions || 1;
   const aS = Math.round((diff.total_additions/tot)*5), dS = Math.round((diff.total_deletions/tot)*5), nS = Math.max(0,5-aS-dS);
@@ -1331,7 +1281,7 @@ function diffSummaryBar(diff) {
 function renderDiffFiles(files, prefix) {
   if (!files.length) return '';
   return files.map((f, i) => renderDiffFile(f, `${prefix}-${i}`)).join('')
-    + `<div class="diff-eof">─── End of git-diff &bull; Thank you! ───</div>`;
+    + `<div class="diff-eof">End of git-diff</div>`;
 }
 
 function countLines(f) {
@@ -1517,9 +1467,7 @@ function copyFileChanges(id) {
   copyText(lines.join('\n'));
 }
 
-// ================================================================
 // COMMIT VIEW
-// ================================================================
 async function showCommit(hash) {
   document.querySelectorAll('.commit-item').forEach(e=>e.classList.remove('active'));
   _id('cr-'+hash)?.classList.add('active');
@@ -1562,9 +1510,7 @@ function renderCommitView(diff, d) {
   setTimeout(observeSentinels, 0);
 }
 
-// ================================================================
 // STAGED / UNSTAGED FILE
-// ================================================================
 function showStagedFile(path) {
   const file = DATA.staged_diff.files.find(f=>f.new_path===path||f.old_path===path);
   if (!file) return showOverview();
@@ -1605,9 +1551,7 @@ async function showUntrackedFile(path) {
   }
 }
 
-// ================================================================
 // FILE VIEW
-// ================================================================
 async function showFileView(path) {
   setMain(loadingHtml(`Loading ${path}…`));
   try {
@@ -1690,9 +1634,7 @@ async function showBlame(path) {
   }
 }
 
-// ================================================================
 // COMPARE
-// ================================================================
 function showCompare() {
   if (!DATA) return;
   const refs = DATA.all_refs.map(r=>r.name);
@@ -1743,9 +1685,7 @@ async function runCompare() {
   }
 }
 
-// ================================================================
 // STASH
-// ================================================================
 async function showStash(ref) {
   setMain(loadingHtml(`Loading stash ${ref}…`));
   try {
@@ -1761,9 +1701,7 @@ async function showStash(ref) {
   }
 }
 
-// ================================================================
 // REFRESH
-// ================================================================
 async function refreshData() {
   notify('🔄 Refreshing…');
   try {
@@ -1778,9 +1716,7 @@ async function refreshData() {
   } catch(e) { notify('❌ Refresh failed','err'); }
 }
 
-// ================================================================
 // HELPERS
-// ================================================================
 function setMain(html) {
   _id('main').innerHTML = html;
   // Apply current font size to all diff tables
@@ -1827,9 +1763,7 @@ const AV_COLORS=['#1e88e5','#43a047','#e53935','#8e24aa','#f4511e','#00897b','#d
 function avatarColor(name) { if(!name)return'#555';let h=0;for(let i=0;i<name.length;i++)h=(h*31+name.charCodeAt(i))&0xffffffff;return AV_COLORS[Math.abs(h)%AV_COLORS.length]; }
 function avatarInit(name) { if(!name)return'?';return name.trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
 
-// ================================================================
 // KEYBOARD SHORTCUTS
-// ================================================================
 document.addEventListener('keydown', e => {
   if (e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
   if (e.key==='Escape') showOverview();
@@ -1841,9 +1775,7 @@ document.addEventListener('keydown', e => {
   if ((e.metaKey||e.ctrlKey)&&e.key==='0'){e.preventDefault();zoomReset();}
 });
 
-// ================================================================
 // PINCH TO ZOOM (mobile)
-// ================================================================
 let pinchD0 = 0, pinchFs0 = 12;
 document.addEventListener('touchstart', e => {
   if (e.touches.length===2) {
@@ -1864,9 +1796,7 @@ document.addEventListener('touchmove', e => {
 <script>
 'use strict';
 
-// ================================================================
 // SYNTAX HIGHLIGHTING
-// ================================================================
 const _EXT_LANG = {
   py:'python',js:'javascript',ts:'typescript',jsx:'javascript',tsx:'typescript',
   html:'xml',htm:'xml',xml:'xml',css:'css',scss:'scss',json:'json',
@@ -1935,9 +1865,7 @@ const _origApplyTheme = applyTheme;
 window.applyTheme = function(t) { _origApplyTheme(t); syncHljsTheme(t); };
 syncHljsTheme(currentTheme);
 
-// ================================================================
 // GLOBAL FUZZY SEARCH  (Ctrl/Cmd+K  or  /)
-// ================================================================
 let _gsOpen = false;
 
 function openGlobalSearch() {
