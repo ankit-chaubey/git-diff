@@ -23,9 +23,7 @@ permissions:
   id-token: write   # Required for OIDC trusted publisher (no API token needed!)
 
 jobs:
-  # ──────────────────────────────────────────────────────────────────
   # 1. Build wheel + sdist
-  # ──────────────────────────────────────────────────────────────────
   build:
     name: Build distribution packages
     runs-on: ubuntu-latest
@@ -88,9 +86,7 @@ jobs:
           path: dist/
           retention-days: 7
 
-  # ──────────────────────────────────────────────────────────────────
   # 2. Publish to PyPI (skipped on dry run)
-  # ──────────────────────────────────────────────────────────────────
   publish:
     name: Publish to PyPI
     needs: build
